@@ -26,7 +26,7 @@ deb() {
   fi
 }
 
-xargs sudo apt-get install -y <package-list
+xargs sudo apt-get install -y <"$INIT_DIR/package-list"
 
 # FIXME: Install with apt on Ubuntu 18.04+
 sudo pip3 install --upgrade recommonmark
@@ -57,8 +57,9 @@ link dots/gdbinit ~/.gdbinit
 link dots/i3config ~/.config/i3/config
 link dots/bash_aliases ~/.bash_aliases
 
-for b in bin/*; do
-  link "$b" ~/"$b"
+for b in "$INIT_DIR"/bin/*; do
+  b=$(basename "$b")
+  link bin/"$b" ~/bin/"$b"
 done
 
 if [ ! -f ~/.local/share/nvim/site/autoload/plug.vim ]; then
