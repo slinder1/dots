@@ -1,0 +1,81 @@
+#!/bin/bash
+
+usage() {
+  printf "cm - cmake wrapper for common configurations\n\n"
+  printf "usage: %s [-s] [-c] [-o] [-t targets] [-f cxx-flags] [-m] [-d] [-x] [-- [cmake-args...]]\n" "$0"
+  printf "  -s: enable ASan and UBSan for LLVM\n"
+  printf "  -o: enable options for building OpenCL\n"
+  printf "  -t: specify LLVM targets to build\n"
+  printf "  -f: specify CXX flags\n"
+  printf "  -g: specify C flags\n"
+  printf "  -m: use GNU Makefiles instead of Ninja\n"
+  printf "  -d: enable Debug build and limit link jobs to 2\n"
+  printf "  -x: enable Sphinx docs for LLVM\n"
+}
+
+OPTS=('-GNinja' \
+      '-DCMAKE_BUILD_TYPE=Release' \
+      '-DCMAKE_INSTALL_PREFIX=dist' \
+      '-DLLVM_ENABLE_ASSERTIONS=On')
+
+OPTIND=1
+
+while getopts ":sot:f:g:mdex" opt; do
+  case "$opt" in
+    h|\?)
+      usage
+      exit 0
+      ;;
+    s)
+      if [[ -z $LIBCXX_ASAN_C_FLAGS || -z $LIBCXX_ASAN_CXX_FLAGS || -z $LIBCXX_ASAN_EXE_LINKER_FLAGS ]]; then
+	printf "error: \$LIBCXX_ASAN_C_FLAGS and \$LIBCXX_ASAN_CXX_FLAGS and \$LIBCXX_ASAN_EXE_LINKER_FLAGS must be set!\n"
+	exit 1
+      fi
+      OPTS+=('-DLLVM_USE_SANITIZER=Address;Undefined' \
+	     "-DCMAKE_C_FLAGS=$LIBCXX_ASAN_C_FLAGS -fsanitize=address,undefined -fno-sanitize=vptr,function -fno-sanitize-recover=all" \
+	     "-DCMAKE_CXX_FLAGS=$LIBCXX_ASAN_CXX_FLAGS -fsanitize=address,undefined -fno-sanitize=vptr,function -fno-sanitize-recover=all" \
+	     "-DCMAKE_SHARED_LINKER_FLAGS=-stdlib=libc++" \
+	     "-DCMAKE_MODULE_LINKER_FLAGS=-stdlib=libc++" \
+	     "-DCMAKE_EXE_LINKER_FLAGS=$LIBCXX_ASAN_EXE_LINKER_FLAGS -stdlib=libc++"
+	     "-DLLVM_PARALLEL_LINK_JOBS=2")
+      ;;
+    o)
+      OPTS+=('-DCLANG_ENABLE_STATIC_ANALYZER=On' \
+	     '-DLLVM_TARGETS_TO_BUILD=AMDGPU;X86' \
+	     '-DLLVM_BUILD_TOOLS=On' \
+	     '-DLLVM_INCLUDE_TESTS=On')
+      ;;
+    t)
+      OPTS+=("-DLLVM_TARGETS_TO_BUILD=$OPTARG")
+      ;;
+    f)
+      OPTS+=("-DCMAKE_CXX_FLAGS=$OPTARG")
+      ;;
+    g)
+      OPTS+=("-DCMAKE_C_FLAGS=$OPTARG")
+      ;;
+    m)
+      OPTS+=('-GUnix Makefiles')
+      ;;
+    d)
+      OPTS+=('-DCMAKE_BUILD_TYPE=Debug' \
+	     '-DLLVM_PARALLEL_LINK_JOBS=2' \
+	     '-DLLVM_OPTIMIZED_TABLEGEN=On')
+      ;;
+    e)
+      OPTS+=('-DLLVM_ENABLE_EXPENSIVE_CHECKS=On' \
+             '-DLLVM_ENABLE_WERROR=Off' \
+	     '-DLLVM_OPTIMIZED_TABLEGEN=On')
+      ;;
+    x)
+      OPTS+=('-DLLVM_BUILD_DOCS=On' \
+	     '-DLLVM_ENABLE_SPHINX=On')
+      ;;
+  esac
+done
+
+shift $((OPTIND-1))
+[ "${1:-}" = "--" ] && shift
+
+rm -rf CMakeCache.txt CMakeFiles
+cmake "${OPTS[@]}" "$@"

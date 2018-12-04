@@ -1,0 +1,59 @@
+#!/bin/bash
+
+set -e
+
+function clone_or_pull() {
+  if [[ -d $1 ]]; then
+    pushd "$1"
+    git pull
+    popd
+  else
+    git clone "https://git.llvm.org/git/$1.git/"
+  fi
+}
+
+clone_or_pull llvm
+pushd llvm/tools
+clone_or_pull clang
+clone_or_pull lld
+popd
+pushd llvm/projects
+clone_or_pull libcxx
+clone_or_pull libcxxabi
+clone_or_pull libunwind
+clone_or_pull compiler-rt
+popd
+mkdir -p release
+pushd release
+cmake -GNinja -DCMAKE_BUILD_TYPE=Release \
+  -DCMAKE_INSTALL_PREFIX=/usr/local \
+  -DCMAKE_C_FLAGS=-w -DCMAKE_CXX_FLAGS=-w \
+  -DLLVM_INCLUDE_TESTS=Off -DLLVM_TARGETS_TO_BUILD=X86 \
+  ../llvm
+ninja
+sudo ninja install
+popd
+C_COMPILER="/usr/local/bin/clang"
+CXX_COMPILER="/usr/local/bin/clang++"
+mkdir -p libcxx-asan
+pushd libcxx-asan
+cmake -GNinja -DCMAKE_BUILD_TYPE=Release \
+  -DCMAKE_INSTALL_PREFIX=/opt/libcxx-asan \
+  -DCMAKE_C_FLAGS=-w -DCMAKE_CXX_FLAGS=-w \
+  -DLLVM_INCLUDE_TESTS=Off -DLLVM_TARGETS_TO_BUILD=X86 \
+  "-DCMAKE_C_COMPILER=$C_COMPILER" \
+  "-DCMAKE_CXX_COMPILER=$CXX_COMPILER" \
+  -DLLVM_USE_SANITIZER='Address' \
+  ../llvm
+ninja cxx cxxabi
+sudo ninja install
+popd
+
+sudo sh -c 'cat >/usr/local/etc/cc.env' <<EOF
+export CC='$C_COMPILER'
+export CXX='$CXX_COMPILER'
+export LIBCXX_ASAN_C_FLAGS='-isystem /opt/libcxx-asan/include -isystem /opt/libcxx-asan/include/c++/v1'
+export LIBCXX_ASAN_CXX_FLAGS='-nostdinc++ -isystem /opt/libcxx-asan/include -isystem /opt/libcxx-asan/include/c++/v1'
+export LIBCXX_ASAN_EXE_LINKER_FLAGS='-lc++abi -Wl,--rpath=/opt/libcxx-asan/lib -L/opt/libcxx-asan/lib'
+export ASAN_OPTIONS=check_initialization_order=true:detect_stack_use_after_return=1:detect_leaks=1
+EOF

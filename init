@@ -1,0 +1,76 @@
+#!/bin/bash
+
+set -e
+
+INIT_DIR=$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")
+DEB_ROCM_REPO=http://repo.radeon.com/rocm/apt/debian/
+DEB_ROCM_CONF=/etc/apt/sources.list.d/rocm.list
+export DEBIAN_FRONTEND=noninteractive
+
+link() {
+  local TARGET="$1"; shift
+  local LINK_NAME="$1"; shift
+  mkdir -p "$(dirname "$LINK_NAME")"
+  ln -sf "$INIT_DIR/$TARGET" "$LINK_NAME"
+}
+
+deb() {
+  local CMD="$1"; shift
+  local URL="$1"; shift
+  if ! which "$CMD" >/dev/null; then
+    local TMP
+    TMP="$(mktemp)"
+    curl -fLo "$TMP" "$URL"
+    sudo dpkg -i "$TMP"
+    rm "$TMP"
+  fi
+}
+
+xargs sudo apt-get install -y <package-list
+
+# FIXME: Install with apt on Ubuntu 18.04+
+sudo pip3 install --upgrade recommonmark
+
+git config --global user.email "Scott.Linder@amd.com"
+git config --global user.name "Scott Linder"
+
+curl -fLo ~/bin/nvim https://github.com/neovim/neovim/releases/download/v0.3.1/nvim.appimage
+chmod u+x ~/bin/nvim
+
+deb fd https://github.com/sharkdp/fd/releases/download/v7.1.0/fd-musl_7.1.0_amd64.deb
+deb rg https://github.com/BurntSushi/ripgrep/releases/download/0.9.0/ripgrep_0.9.0_amd64.deb
+deb bat https://github.com/sharkdp/bat/releases/download/v0.6.0/bat_0.6.0_amd64.deb
+
+if ! which docker >/dev/null; then
+  curl -fsSL get.docker.com | sudo sh
+  sudo sh -c 'cat >/etc/docker/daemon.json' <<EOF
+  {
+      "dns": ["10.234.250.9"]
+  }
+EOF
+fi
+
+link dots/vimrc ~/.vimrc
+link dots/vimrc ~/.config/nvim/init.vim
+link dots/tmux.conf ~/.tmux.conf
+link dots/gdbinit ~/.gdbinit
+link dots/i3config ~/.config/i3/config
+link dots/bash_aliases ~/.bash_aliases
+
+for b in bin/*; do
+  link "$b" ~/"$b"
+done
+
+if [ ! -f ~/.local/share/nvim/site/autoload/plug.vim ]; then
+  curl -fLo ~/.local/share/nvim/site/autoload/plug.vim --create-dirs \
+    https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
+fi
+
+if ! dpkg -l | grep rocm -q; then
+  wget -qO - "$DEB_ROCM_REPO/rocm.gpg.key" | sudo apt-key add -
+  sudo sh -c "echo deb [arch=amd64] $DEB_ROCM_REPO xenial main > $DEB_ROCM_CONF"
+  sudo apt-get update -y
+  sudo apt-get install -y rocm-dkms
+fi
+
+sudo usermod -a -G video "$USER"
