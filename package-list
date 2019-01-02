@@ -13,6 +13,7 @@ flex
 g++-4.8
 gcc-multilib
 git
+google-perftools
 htop
 i3
 kernel-wedge
@@ -24,6 +25,7 @@ libc++-dev
 libdwarf-dev
 libelf-dev
 libgl1-mesa-dev
+libgoogle-perftools-dev
 libhwloc-dev
 libncurses5-dev
 libncurses5-dev:i386
