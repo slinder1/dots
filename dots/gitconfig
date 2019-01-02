@@ -1,0 +1,7 @@
+[user]
+	email = Scott.Linder@amd.com
+	name = Scott Linder
+[color]
+	ui = auto
+[alias]
+	co = checkout
