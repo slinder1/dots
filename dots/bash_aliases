@@ -54,9 +54,10 @@ c() {
 g() {
   git "$@"
 }
-gg() {
-  git grep -i "$@"
-}
+if [ -f /usr/share/bash-completion/completions/git ]; then
+  . /usr/share/bash-completion/completions/git
+  __git_complete g _git
+fi
 ldo() {
   "$@"
   if [ -d tools/clang ]; then
