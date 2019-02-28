@@ -2,7 +2,7 @@
 
 usage() {
   printf "cm - cmake wrapper for common configurations\n\n"
-  printf "usage: %s [-s] [-c] [-o] [-t targets] [-f cxx-flags] [-m] [-d] [-x] [-- [cmake-args...]]\n" "$0"
+  printf "usage: %s [-s] [-o] [-t targets] [-f cxx-flags] [-g c-flags] [-m] [-d] [-e] [-x] [-- [cmake-args...]]\n" "$0"
   printf "  -s: enable ASan and UBSan for LLVM\n"
   printf "  -o: enable options for building OpenCL\n"
   printf "  -t: specify LLVM targets to build\n"
@@ -10,8 +10,12 @@ usage() {
   printf "  -g: specify C flags\n"
   printf "  -m: use GNU Makefiles instead of Ninja\n"
   printf "  -d: enable Debug build and limit link jobs to 2\n"
+  printf "  -e: enable LLVM expensive checks\n"
   printf "  -x: enable Sphinx docs for LLVM\n"
 }
+
+C_FLAGS=('-fcolor-diagnostics')
+CXX_FLAGS=('-fcolor-diagnostics')
 
 OPTS=('-GNinja' \
       '-DCMAKE_BUILD_TYPE=Release' \
@@ -32,9 +36,10 @@ while getopts ":sot:f:g:mdex" opt; do
 	printf "error: \$LIBCXX_ASAN_C_FLAGS and \$LIBCXX_ASAN_CXX_FLAGS and \$LIBCXX_ASAN_EXE_LINKER_FLAGS must be set!\n"
 	exit 1
       fi
+      ASAN_FLAGS="$LIBCXX_ASAN_C_FLAGS -fsanitize=address,undefined -fno-sanitize=vptr,function -fno-sanitize-recover=all"
+      C_FLAGS+=("$ASAN_FLAGS")
+      CXX_FLAGS+=("$ASAN_FLAGS")
       OPTS+=('-DLLVM_USE_SANITIZER=Address;Undefined' \
-	     "-DCMAKE_C_FLAGS=$LIBCXX_ASAN_C_FLAGS -fsanitize=address,undefined -fno-sanitize=vptr,function -fno-sanitize-recover=all" \
-	     "-DCMAKE_CXX_FLAGS=$LIBCXX_ASAN_CXX_FLAGS -fsanitize=address,undefined -fno-sanitize=vptr,function -fno-sanitize-recover=all" \
 	     "-DCMAKE_SHARED_LINKER_FLAGS=-stdlib=libc++" \
 	     "-DCMAKE_MODULE_LINKER_FLAGS=-stdlib=libc++" \
 	     "-DCMAKE_EXE_LINKER_FLAGS=$LIBCXX_ASAN_EXE_LINKER_FLAGS -stdlib=libc++"
@@ -50,10 +55,10 @@ while getopts ":sot:f:g:mdex" opt; do
       OPTS+=("-DLLVM_TARGETS_TO_BUILD=$OPTARG")
       ;;
     f)
-      OPTS+=("-DCMAKE_CXX_FLAGS=$OPTARG")
+      CXX_FLAGS+=("$OPTARG")
       ;;
     g)
-      OPTS+=("-DCMAKE_C_FLAGS=$OPTARG")
+      C_FLAGS+=("$OPTARG")
       ;;
     m)
       OPTS+=('-GUnix Makefiles')
@@ -79,4 +84,4 @@ shift $((OPTIND-1))
 [ "${1:-}" = "--" ] && shift
 
 rm -rf CMakeCache.txt CMakeFiles
-cmake "${OPTS[@]}" "$@"
+cmake "${OPTS[@]}" "-DCMAKE_C_FLAGS=${C_FLAGS[*]}" "-DCMAKE_CXX_FLAGS=${CXX_FLAGS[*]}" "$@"
