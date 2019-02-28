@@ -110,6 +110,10 @@ bindsym $mod+x exec "i3lock -c 000000"
 bindsym $mod+Shift+p move scratchpad
 bindsym $mod+p scratchpad show
 
+bindsym $mod+Left exec "dbus-send --print-reply --dest=org.mpris.MediaPlayer2.spotify /org/mpris/MediaPlayer2 org.mpris.MediaPlayer2.Player.Previous"
+bindsym $mod+Right exec "dbus-send --print-reply --dest=org.mpris.MediaPlayer2.spotify /org/mpris/MediaPlayer2 org.mpris.MediaPlayer2.Player.Next"
+bindsym $mod+Down exec "dbus-send --print-reply --dest=org.mpris.MediaPlayer2.spotify /org/mpris/MediaPlayer2 org.mpris.MediaPlayer2.Player.PlayPause"
+
 exec --no-startup-id xmodmap ~/.xmodmap
 exec --no-startup-id xsetroot -solid "#000000"
 exec --no-startup-id ~/.xrandr
