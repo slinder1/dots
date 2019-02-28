@@ -13,6 +13,7 @@ flex
 g++-4.8
 gcc-multilib
 git
+golang-go
 google-perftools
 htop
 i3
@@ -52,6 +53,7 @@ rpm
 shellcheck
 ssh
 subversion
+texinfo
 tmux
 tree
 virtinst
