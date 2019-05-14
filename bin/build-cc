@@ -3,12 +3,17 @@
 set -e
 
 function clone_or_pull() {
-  if [[ -d $1 ]]; then
-    pushd "$1"
+  local REPO="$1"
+  local DIR="$2"
+  if [[ -z "$DIR" ]]; then
+    DIR="$REPO"
+  fi
+  if [[ -d $DIR ]]; then
+    pushd "$DIR"
     git pull
     popd
   else
-    git clone "https://git.llvm.org/git/$1.git/"
+    git clone "https://git.llvm.org/git/$REPO.git/" "$DIR"
   fi
 }
 
@@ -16,6 +21,9 @@ clone_or_pull llvm
 pushd llvm/tools
 clone_or_pull clang
 clone_or_pull lld
+pushd clang/tools
+clone_or_pull clang-tools-extra extra
+popd
 popd
 pushd llvm/projects
 clone_or_pull libcxx
@@ -44,6 +52,7 @@ cmake -GNinja -DCMAKE_BUILD_TYPE=Release \
   "-DCMAKE_C_COMPILER=$C_COMPILER" \
   "-DCMAKE_CXX_COMPILER=$CXX_COMPILER" \
   -DLLVM_USE_SANITIZER='Address' \
+  -DLLVM_USE_LINKER='lld' \
   ../llvm
 ninja cxx cxxabi
 sudo ninja install
