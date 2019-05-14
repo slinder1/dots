@@ -2,21 +2,32 @@
 
 usage() {
   printf "cm - cmake wrapper for common configurations\n\n"
-  printf "usage: %s [-s] [-o] [-t targets] [-f cxx-flags] [-g c-flags] [-m] [-d] [-e] [-x] [-- [cmake-args...]]\n" "$0"
+  printf "usage: %s [-s] [-o] [-t targets] [-f cxx-flag]... [-g c-flag]... [-m] [-d] [-e] [-x] [-p path]... [-- [cmake-args...]] <path-to-source>\n" "$0"
   printf "  -s: enable ASan and UBSan for LLVM\n"
   printf "  -o: enable options for building OpenCL\n"
   printf "  -t: specify LLVM targets to build\n"
-  printf "  -f: specify CXX flags\n"
-  printf "  -g: specify C flags\n"
+  printf "  -f: append to CXX flags\n"
+  printf "  -g: append to C flags\n"
   printf "  -m: use GNU Makefiles instead of Ninja\n"
   printf "  -d: enable Debug build and limit link jobs to 2\n"
   printf "  -e: enable LLVM expensive checks\n"
   printf "  -x: enable Sphinx docs for LLVM\n"
+  printf "  -p: append to CMAKE_PREFIX_PATH\n"
 }
 
+join() {
+  local IFS="$1"; shift
+  printf "%s" "$*"
+}
+
+# FIXME: These flags seem to be Clang-specific
 C_FLAGS=('-fcolor-diagnostics')
 CXX_FLAGS=('-fcolor-diagnostics')
+PREFIX_PATHS=()
 
+# FIXME: Some of these only apply to LLVM, but they are annoying when forgotten
+# and only generate warnings when used with other programs. Maybe it would be
+# worth detecting LLVM to set these defaults.
 OPTS=('-GNinja' \
       '-DCMAKE_BUILD_TYPE=Release' \
       '-DCMAKE_INSTALL_PREFIX=dist' \
@@ -26,7 +37,7 @@ OPTS=('-GNinja' \
 
 OPTIND=1
 
-while getopts ":sot:f:g:mdex" opt; do
+while getopts ":sot:f:g:mdexp:" opt; do
   case "$opt" in
     h|\?)
       usage
@@ -78,11 +89,19 @@ while getopts ":sot:f:g:mdex" opt; do
       OPTS+=('-DLLVM_BUILD_DOCS=On' \
 	     '-DLLVM_ENABLE_SPHINX=On')
       ;;
+    p)
+      PREFIX_PATHS+=("$OPTARG")
+      ;;
   esac
 done
+
+# FIXME: C and CXX flags with spaces still aren't handled right
+OPTS+=("-DCMAKE_C_FLAGS=$(join ' ' "${C_FLAGS[@]}")")
+OPTS+=("-DCMAKE_CXX_FLAGS=$(join ' ' "${CXX_FLAGS[@]}")")
+OPTS+=("-DCMAKE_PREFIX_PATH=$(join ';' "${PREFIX_PATHS[@]}")")
 
 shift $((OPTIND-1))
 [ "${1:-}" = "--" ] && shift
 
 rm -rf CMakeCache.txt CMakeFiles
-cmake "${OPTS[@]}" "-DCMAKE_C_FLAGS=${C_FLAGS[*]}" "-DCMAKE_CXX_FLAGS=${CXX_FLAGS[*]}" "$@"
+cmake "${OPTS[@]}" "$@"
