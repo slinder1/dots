@@ -2,3 +2,4 @@ set history save on
 layout src
 focus cmd
 set follow-fork-mode child
+set auto-load safe-path /
