@@ -6,17 +6,18 @@ Plug 'dag/vim-fish'
 Plug 'gerw/vim-latex-suite'
 Plug 'kien/ctrlp.vim'
 Plug 'mattn/emmet-vim'
+Plug 'neomake/neomake'
 Plug 'ntpeters/vim-better-whitespace'
 Plug 'octol/vim-cpp-enhanced-highlight'
 Plug 'rhysd/vim-clang-format'
 Plug 'scott-linder/molokai'
 Plug 'scrooloose/nerdtree'
-Plug 'scrooloose/syntastic'
 Plug 'tpope/vim-abolish'
 Plug 'tpope/vim-sensible'
 Plug 'tpope/vim-sleuth'
 Plug 'vim-scripts/a.vim'
 Plug 'vimoutliner/vimoutliner'
+Plug 'embear/vim-localvimrc'
 call plug#end()
 
 "" VIM
@@ -131,23 +132,8 @@ if executable('rg')
   let g:ctrlp_use_caching = 0
 endif
 
-" Syntastic
-set statusline=%f\ %h%w%m%r\ 
-set statusline+=%#warningmsg#
-set statusline+=%{SyntasticStatuslineFlag()}
-set statusline+=%*
-set statusline+=%=%(%l,%c%V\ %=\ %P%)
+" NeoMake
+call neomake#configure#automake('w')
 
-"let g:syntastic_always_populate_loc_list = 1
-"let g:syntastic_auto_loc_list = 1
-let g:syntastic_check_on_open = 1
-let g:syntastic_check_on_wq = 0
-
-function! ToggleErrors()
-    let nw = winnr('$')
-    lclose
-    if nw == winnr('$')
-        Errors
-    endif
-endfunction
-nnoremap <silent> <C-e> :<C-u>call ToggleErrors()<CR>
+" localvimrc
+let g:localvimrc_persistent = 2
