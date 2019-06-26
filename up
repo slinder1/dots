@@ -28,9 +28,6 @@ deb() {
 
 xargs sudo apt-get install -y <"$INIT_DIR/package-list"
 
-git config --global user.email "Scott.Linder@amd.com"
-git config --global user.name "Scott Linder"
-
 mkdir -p ~/bin
 
 curl -fLo ~/bin/nvim https://github.com/neovim/neovim/releases/download/v0.3.1/nvim.appimage
