@@ -20,20 +20,31 @@ join() {
   printf '%s' "$*"
 }
 
-# FIXME: These flags seem to be Clang-specific
-C_FLAGS=('-fcolor-diagnostics')
-CXX_FLAGS=('-fcolor-diagnostics')
+compiler_is_clang() {
+  local CC="$CC"
+  [[ -n $CC ]] || CC='cc'
+  local CXX="$CXX"
+  [[ -n $CXX ]] || CXX='c++'
+  # FIXME: this may be imprecise, but it seems to work
+  eval "$CC --version" | grep -qi 'clang' &&
+    eval "$CXX --version" | grep -qi 'clang'
+}
+
+C_FLAGS=()
+CXX_FLAGS=()
 PREFIX_PATHS=()
 
-# FIXME: Some of these only apply to LLVM, but they are annoying when forgotten
-# and only generate warnings when used with other programs. Maybe it would be
-# worth detecting LLVM to set these defaults.
 OPTS=('-GNinja'
       '-DCMAKE_BUILD_TYPE=Release'
       '-DCMAKE_INSTALL_PREFIX=dist'
       '-DLLVM_ENABLE_ASSERTIONS=On'
-      '-DLLVM_USE_LINKER=lld'
       '-DCMAKE_EXPORT_COMPILE_COMMANDS=On')
+
+if compiler_is_clang; then
+  C_FLAGS+=('-fcolor-diagnostics')
+  CXX_FLAGS+=('-fcolor-diagnostics')
+  OPTS+=('-DLLVM_USE_LINKER=lld')
+fi
 
 OPTIND=1
 
