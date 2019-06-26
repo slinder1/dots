@@ -1,23 +1,23 @@
 #!/bin/bash
 
 usage() {
-  printf "cm - cmake wrapper for common configurations\n\n"
-  printf "usage: %s [-s] [-o] [-t targets] [-f cxx-flag]... [-g c-flag]... [-m] [-d] [-e] [-x] [-p path]... [-- [cmake-args...]] <path-to-source>\n" "$0"
-  printf "  -s: enable ASan and UBSan for LLVM\n"
-  printf "  -o: enable options for building OpenCL\n"
-  printf "  -t: specify LLVM targets to build\n"
-  printf "  -f: append to CXX flags\n"
-  printf "  -g: append to C flags\n"
-  printf "  -m: use GNU Makefiles instead of Ninja\n"
-  printf "  -d: enable Debug build and limit link jobs to 2\n"
-  printf "  -e: enable LLVM expensive checks\n"
-  printf "  -x: enable Sphinx docs for LLVM\n"
-  printf "  -p: append to CMAKE_PREFIX_PATH\n"
+  printf 'cm - cmake wrapper for common configurations\n\n'
+  printf 'usage: %s [-s] [-o] [-t targets] [-f cxx-flag]... [-g c-flag]... [-m] [-d] [-e] [-x] [-p path]... [-- [cmake-args...]] <path-to-source>\n' "$0"
+  printf '  -s: enable ASan and UBSan for LLVM\n'
+  printf '  -o: enable options for building OpenCL\n'
+  printf '  -t: specify LLVM targets to build\n'
+  printf '  -f: append to CXX flags\n'
+  printf '  -g: append to C flags\n'
+  printf '  -m: use GNU Makefiles instead of Ninja\n'
+  printf '  -d: enable Debug build and limit link jobs to 2\n'
+  printf '  -e: enable LLVM expensive checks\n'
+  printf '  -x: enable Sphinx docs for LLVM\n'
+  printf '  -p: append to CMAKE_PREFIX_PATH\n'
 }
 
 join() {
   local IFS="$1"; shift
-  printf "%s" "$*"
+  printf '%s' "$*"
 }
 
 # FIXME: These flags seem to be Clang-specific
@@ -28,16 +28,16 @@ PREFIX_PATHS=()
 # FIXME: Some of these only apply to LLVM, but they are annoying when forgotten
 # and only generate warnings when used with other programs. Maybe it would be
 # worth detecting LLVM to set these defaults.
-OPTS=('-GNinja' \
-      '-DCMAKE_BUILD_TYPE=Release' \
-      '-DCMAKE_INSTALL_PREFIX=dist' \
-      '-DLLVM_ENABLE_ASSERTIONS=On' \
+OPTS=('-GNinja'
+      '-DCMAKE_BUILD_TYPE=Release'
+      '-DCMAKE_INSTALL_PREFIX=dist'
+      '-DLLVM_ENABLE_ASSERTIONS=On'
       '-DLLVM_USE_LINKER=lld'
       '-DCMAKE_EXPORT_COMPILE_COMMANDS=On')
 
 OPTIND=1
 
-while getopts ":sot:f:g:mdexp:" opt; do
+while getopts ':sot:f:g:mdexp:' opt; do
   case "$opt" in
     h|\?)
       usage
@@ -45,22 +45,21 @@ while getopts ":sot:f:g:mdexp:" opt; do
       ;;
     s)
       if [[ -z $LIBCXX_ASAN_C_FLAGS || -z $LIBCXX_ASAN_CXX_FLAGS || -z $LIBCXX_ASAN_EXE_LINKER_FLAGS ]]; then
-	printf "error: \$LIBCXX_ASAN_C_FLAGS and \$LIBCXX_ASAN_CXX_FLAGS and \$LIBCXX_ASAN_EXE_LINKER_FLAGS must be set!\n"
+	printf 'error: LIBCXX_ASAN_C_FLAGS and LIBCXX_ASAN_CXX_FLAGS and LIBCXX_ASAN_EXE_LINKER_FLAGS must be set!\n'
 	exit 1
       fi
-      ASAN_FLAGS="-fsanitize=address,undefined -fno-sanitize=vptr,function -fno-sanitize-recover=all"
+      ASAN_FLAGS='-fsanitize=address,undefined -fno-sanitize=vptr,function -fno-sanitize-recover=all'
       C_FLAGS+=("$LIBCXX_ASAN_C_FLAGS $ASAN_FLAGS")
       CXX_FLAGS+=("$LIBCXX_ASAN_CXX_FLAGS $ASAN_FLAGS")
-      OPTS+=('-DLLVM_USE_SANITIZER=Address;Undefined' \
-	     "-DCMAKE_SHARED_LINKER_FLAGS=-stdlib=libc++" \
-	     "-DCMAKE_MODULE_LINKER_FLAGS=-stdlib=libc++" \
+      OPTS+=('-DLLVM_USE_SANITIZER=Address;Undefined'
+	     '-DCMAKE_SHARED_LINKER_FLAGS=-stdlib=libc++'
+	     '-DCMAKE_MODULE_LINKER_FLAGS=-stdlib=libc++'
 	     "-DCMAKE_EXE_LINKER_FLAGS=$LIBCXX_ASAN_EXE_LINKER_FLAGS -stdlib=libc++"
-	     "-DLLVM_PARALLEL_LINK_JOBS=2")
+	     '-DLLVM_PARALLEL_LINK_JOBS=2')
       ;;
     o)
-      OPTS+=('-DCLANG_ENABLE_STATIC_ANALYZER=On' \
-	     '-DLLVM_TARGETS_TO_BUILD=AMDGPU;X86' \
-	     '-DLLVM_BUILD_TOOLS=On' \
+      OPTS+=('-DCLANG_ENABLE_STATIC_ANALYZER=On'
+	     '-DLLVM_TARGETS_TO_BUILD=AMDGPU;X86' '-DLLVM_BUILD_TOOLS=On'
 	     '-DLLVM_INCLUDE_TESTS=On')
       ;;
     t)
@@ -76,18 +75,15 @@ while getopts ":sot:f:g:mdexp:" opt; do
       OPTS+=('-GUnix Makefiles')
       ;;
     d)
-      OPTS+=('-DCMAKE_BUILD_TYPE=Debug' \
-	     '-DLLVM_PARALLEL_LINK_JOBS=2' \
+      OPTS+=('-DCMAKE_BUILD_TYPE=Debug' '-DLLVM_PARALLEL_LINK_JOBS=2'
 	     '-DLLVM_OPTIMIZED_TABLEGEN=On')
       ;;
     e)
-      OPTS+=('-DLLVM_ENABLE_EXPENSIVE_CHECKS=On' \
-             '-DLLVM_ENABLE_WERROR=Off' \
+      OPTS+=('-DLLVM_ENABLE_EXPENSIVE_CHECKS=On' '-DLLVM_ENABLE_WERROR=Off'
 	     '-DLLVM_OPTIMIZED_TABLEGEN=On')
       ;;
     x)
-      OPTS+=('-DLLVM_BUILD_DOCS=On' \
-	     '-DLLVM_ENABLE_SPHINX=On')
+      OPTS+=('-DLLVM_BUILD_DOCS=On' '-DLLVM_ENABLE_SPHINX=On')
       ;;
     p)
       PREFIX_PATHS+=("$OPTARG")
@@ -101,7 +97,7 @@ OPTS+=("-DCMAKE_CXX_FLAGS=$(join ' ' "${CXX_FLAGS[@]}")")
 OPTS+=("-DCMAKE_PREFIX_PATH=$(join ';' "${PREFIX_PATHS[@]}")")
 
 shift $((OPTIND-1))
-[ "${1:-}" = "--" ] && shift
+[ "${1:-}" = '--' ] && shift
 
 rm -rf CMakeCache.txt CMakeFiles
 cmake "${OPTS[@]}" "$@"
