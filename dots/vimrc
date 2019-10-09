@@ -2,7 +2,9 @@
 
 call plug#begin('~/.vim/plugged')
 Plug 'airblade/vim-gitgutter'
+Plug 'antiagainst/vim-tablegen'
 Plug 'dag/vim-fish'
+Plug 'embear/vim-localvimrc'
 Plug 'gerw/vim-latex-suite'
 Plug 'kien/ctrlp.vim'
 Plug 'mattn/emmet-vim'
@@ -17,7 +19,6 @@ Plug 'tpope/vim-sensible'
 Plug 'tpope/vim-sleuth'
 Plug 'vim-scripts/a.vim'
 Plug 'vimoutliner/vimoutliner'
-Plug 'embear/vim-localvimrc'
 call plug#end()
 
 "" VIM
