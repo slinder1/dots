@@ -37,6 +37,7 @@ PREFIX_PATHS=()
 OPTS=('-GNinja'
       '-DCMAKE_BUILD_TYPE=Release'
       '-DCMAKE_INSTALL_PREFIX=dist'
+      '-DLLVM_ENABLE_PROJECTS=llvm;clang;lld'
       '-DLLVM_ENABLE_ASSERTIONS=On'
       '-DCMAKE_EXPORT_COMPILE_COMMANDS=On')
 
