@@ -39,12 +39,18 @@ deb bat https://github.com/sharkdp/bat/releases/download/v0.6.0/bat_0.6.0_amd64.
 
 if ! which docker >/dev/null; then
   curl -fsSL get.docker.com | sudo sh
-  sudo sh -c 'cat >/etc/docker/daemon.json' <<EOF
-  {
-      "dns": ["10.234.250.9"]
-  }
-EOF
 fi
+sudo sh -c 'cat >/etc/docker/daemon.json' <<EOF
+{
+    "dns": ["10.234.250.9"],
+    "insecure-registries": [
+        "compute-artifactory.amd.com:5000",
+        "compute-artifactory.amd.com:5001"
+    ],
+    "storage-driver": "overlay2"
+}
+EOF
+sudo systemctl restart docker
 
 link dots/vimrc ~/.vimrc
 link dots/vimrc ~/.config/nvim/init.vim
