@@ -47,11 +47,11 @@ sudo pip3 install --user neovim-remote
 
 mkdir -p ~/bin
 
-which abduco >/dev/null || \
-  compile \
-    3e120fe9ca57fa80d2a5c10a868e0f87680a6671 \
-    https://github.com/martanne/abduco/archive/v0.6.tar.gz \
-    abduco-0.6
+#which abduco >/dev/null || \
+#  compile \
+#    3e120fe9ca57fa80d2a5c10a868e0f87680a6671 \
+#    https://github.com/martanne/abduco/archive/v0.6.tar.gz \
+#    abduco-0.6
 
 [ -f ~/bin/nvim ] || \
   curl -fLo ~/bin/nvim https://github.com/neovim/neovim/releases/download/v0.3.1/nvim.appimage
