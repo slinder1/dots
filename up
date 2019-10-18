@@ -26,11 +26,35 @@ deb() {
   fi
 }
 
+compile() {
+  local SHA="$1"; shift
+  local URL="$1"; shift
+  local SUBDIR="$1"; shift
+  local TARGZ="${URL##*/}"
+  local TMP
+  TMP="$(mktemp -d)"
+  curl -fLo "$TMP/$TARGZ" "$URL"
+  echo "$SHA $TMP/$TARGZ" | sha1sum -c --status || return
+  tar xfvz "$TMP/$TARGZ" -C "$TMP" || return
+  make -C "$TMP/$SUBDIR" || return
+  sudo make -C "$TMP/$SUBDIR" install
+  rm -rf "$TMP"
+}
+
 xargs sudo apt-get install -y <"$INIT_DIR/package-list"
+
+sudo pip3 install --user neovim-remote
 
 mkdir -p ~/bin
 
-[ -f ~/bin/nvim ] || curl -fLo ~/bin/nvim https://github.com/neovim/neovim/releases/download/v0.3.1/nvim.appimage
+which abduco >/dev/null || \
+  compile \
+    3e120fe9ca57fa80d2a5c10a868e0f87680a6671 \
+    https://github.com/martanne/abduco/archive/v0.6.tar.gz \
+    abduco-0.6
+
+[ -f ~/bin/nvim ] || \
+  curl -fLo ~/bin/nvim https://github.com/neovim/neovim/releases/download/v0.3.1/nvim.appimage
 chmod u+x ~/bin/nvim
 
 deb fd https://github.com/sharkdp/fd/releases/download/v7.1.0/fd-musl_7.1.0_amd64.deb
