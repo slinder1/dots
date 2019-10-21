@@ -142,6 +142,9 @@ let g:localvimrc_persistent = 2
 " exit terminal insert mode
 tnoremap <A-e> <C-\><C-n>
 
+" terminal specific options
+au TermOpen * setlocal nonumber norelativenumber
+
 " alt+{hjkl} to navigate windows
 :tnoremap <A-h> <C-\><C-N><C-w>h
 :tnoremap <A-j> <C-\><C-N><C-w>j
