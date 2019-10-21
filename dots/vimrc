@@ -163,3 +163,6 @@ tnoremap <A-e> <C-\><C-n>
 :inoremap <C-A-l> <C-\><C-N> :tabnext<CR>
 :nnoremap <C-A-h> :tabprevious<CR>
 :nnoremap <C-A-l> :tabnext<CR>
+
+let $GIT_EDITOR = 'nvr -cc split --remote-wait'
+autocmd FileType gitcommit set bufhidden=delete
