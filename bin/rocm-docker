@@ -1,0 +1,30 @@
+#!/bin/bash
+
+usage() {
+  printf 'rocm-docker - run a specific OSDB docker build\n\n'
+  printf 'usage: %s [-h] <build-id> <build-number>\n' "$0"
+}
+
+OPTIND=1
+
+while getopts ':' opt; do
+  case "$opt" in
+    h|\?)
+      usage
+      exit 0
+      ;;
+  esac
+done
+
+shift $((OPTIND-1))
+
+if [ $# -ne 2 ]; then
+    usage
+    exit 1
+fi
+
+docker run -it --network=host --device=/dev/kfd --device=/dev/dri \
+  --group-add video --cap-add=SYS_PTRACE --security-opt seccomp=unconfined \
+  -v "$HOME/dockerx:/dockerx" -v "$SSH_AUTH_SOCK:/ssh-auth-sock" \
+  -e SSH_AUTH_SOCK=/ssh-auth-sock \
+  "compute-artifactory.amd.com:5000/rocm-plus-docker/$1:$2"

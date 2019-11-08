@@ -1,0 +1,27 @@
+#!/bin/bash
+
+usage() {
+  printf 'rocm-sources - update /etc/apt/sources.list.d/rocm.list to a specific OSDB build\n\n' 
+  printf 'usage: %s [-h] <build-id> <build-number>\n' "$0"
+}
+
+OPTIND=1
+
+while getopts ':' opt; do
+  case "$opt" in
+    h|\?)
+      usage
+      exit 0
+      ;;
+  esac
+done
+
+shift $((OPTIND-1))
+
+if [ $# -ne 2 ]; then
+    usage
+    exit 1
+fi
+
+printf "deb [arch=amd64 trusted=yes] http://compute-artifactory.amd.com/artifactory/list/rocm-osdb-deb/ %s %s\n" \
+  "$1" "$2" >/etc/apt/sources.list.d/rocm.list
