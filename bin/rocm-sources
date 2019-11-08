@@ -23,5 +23,7 @@ if [ $# -ne 2 ]; then
     exit 1
 fi
 
+printf "sudo sh -c \"echo 'deb [arch=amd64 trusted=yes] http://compute-artifactory.amd.com/artifactory/list/rocm-osdb-deb/ %s %s' >/etc/apt/sources.list.d/rocm.list\"\n" \
+  "$1" "$2"
 printf "deb [arch=amd64 trusted=yes] http://compute-artifactory.amd.com/artifactory/list/rocm-osdb-deb/ %s %s\n" \
   "$1" "$2" >/etc/apt/sources.list.d/rocm.list
