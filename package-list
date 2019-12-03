@@ -4,6 +4,7 @@ bc
 bison
 bridge-utils
 build-essential
+ccache
 chromium-browser
 cmake
 curl

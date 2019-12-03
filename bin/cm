@@ -2,17 +2,18 @@
 
 usage() {
   printf 'cm - cmake wrapper for common configurations\n\n'
-  printf 'usage: %s [-s] [-o] [-t targets] [-f cxx-flag]... [-g c-flag]... [-m] [-d] [-e] [-x] [-p path]... [-- [cmake-args...]] <path-to-source>\n' "$0"
+  printf 'usage: %s [-s] [-o] [-f cxx-flag]... [-g c-flag]... [-m] [-d] [-e] [-x] [-p path]... [-b project]... [-t target]... [-- [cmake-args...]] <path-to-source>\n' "$0"
   printf '  -s: enable ASan and UBSan for LLVM\n'
   printf '  -o: enable options for building OpenCL\n'
-  printf '  -t: specify LLVM targets to build\n'
   printf '  -f: append to CXX flags\n'
   printf '  -g: append to C flags\n'
   printf '  -m: use GNU Makefiles instead of Ninja\n'
   printf '  -d: enable Debug build and limit link jobs to 2\n'
   printf '  -e: enable LLVM expensive checks\n'
   printf '  -x: enable Sphinx docs for LLVM\n'
-  printf '  -p: append to CMAKE_PREFIX_PATH\n'
+  printf '  -p: append to CMAKE_PREFIX_PATH (default: empty)\n'
+  printf '  -b: append to LLVM_ENABLE_PROJECTS (default: llvm;clang;lld)\n'
+  printf '  -t: append to LLVM_TARGETS_TO_BUILD targets to build (default: all)\n'
 }
 
 join() {
@@ -30,16 +31,26 @@ compiler_is_clang() {
     eval "$CXX --version" | grep -qi 'clang'
 }
 
+is_building_llvm() {
+  pwd | grep -q llvm-project
+}
+
 C_FLAGS=()
 CXX_FLAGS=()
 PREFIX_PATHS=()
+ENABLED_PROJECTS=()
+TARGETS_TO_BUILD=()
 
 OPTS=('-GNinja'
       '-DCMAKE_BUILD_TYPE=Release'
       '-DCMAKE_INSTALL_PREFIX=dist'
-      '-DLLVM_ENABLE_PROJECTS=llvm;clang;lld'
-      '-DLLVM_ENABLE_ASSERTIONS=On'
       '-DCMAKE_EXPORT_COMPILE_COMMANDS=On')
+
+if is_building_llvm; then
+  OPTS+=('-DLLVM_ENABLE_ASSERTIONS=On'
+         '-DLLVM_CCACHE_BUILD=On'
+	 '-DLLVM_CCACHE_MAXSIZE=256G')
+fi
 
 if compiler_is_clang; then
   C_FLAGS+=('-fcolor-diagnostics')
@@ -49,7 +60,7 @@ fi
 
 OPTIND=1
 
-while getopts ':sot:f:g:mdexp:' opt; do
+while getopts ':sof:g:mdexp:b:t:' opt; do
   case "$opt" in
     h|\?)
       usage
@@ -74,9 +85,6 @@ while getopts ':sot:f:g:mdexp:' opt; do
 	     '-DLLVM_TARGETS_TO_BUILD=AMDGPU;X86' '-DLLVM_BUILD_TOOLS=On'
 	     '-DLLVM_INCLUDE_TESTS=On')
       ;;
-    t)
-      OPTS+=("-DLLVM_TARGETS_TO_BUILD=$OPTARG")
-      ;;
     f)
       CXX_FLAGS+=("$OPTARG")
       ;;
@@ -100,6 +108,12 @@ while getopts ':sot:f:g:mdexp:' opt; do
     p)
       PREFIX_PATHS+=("$OPTARG")
       ;;
+    b)
+      ENABLED_PROJECTS+=("$OPTARG")
+      ;;
+    t)
+      TARGETS_TO_BUILD+=("$OPTARG")
+      ;;
   esac
 done
 
@@ -107,9 +121,18 @@ done
 OPTS+=("-DCMAKE_C_FLAGS=$(join ' ' "${C_FLAGS[@]}")")
 OPTS+=("-DCMAKE_CXX_FLAGS=$(join ' ' "${CXX_FLAGS[@]}")")
 OPTS+=("-DCMAKE_PREFIX_PATH=$(join ';' "${PREFIX_PATHS[@]}")")
+if [ ${#ENABLED_PROJECTS[@]} -ne 0 ]; then
+  OPTS+=("-DLLVM_ENABLE_PROJECTS=$(join ';' "${ENABLED_PROJECTS[@]}")")
+else
+  OPTS+=("-DLLVM_ENABLE_PROJECTS=llvm;clang;lld")
+fi
+if [ ${#TARGETS_TO_BUILD[@]} -ne 0 ]; then
+  OPTS+=("-DLLVM_TARGETS_TO_BUILD=$(join ';' "${TARGETS_TO_BUILD[@]}")")
+fi
 
 shift $((OPTIND-1))
 [ "${1:-}" = '--' ] && shift
 
 rm -rf CMakeCache.txt CMakeFiles
+echo cmake "${OPTS[@]}" "$@"
 cmake "${OPTS[@]}" "$@"
