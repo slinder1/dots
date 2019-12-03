@@ -2,7 +2,8 @@
 
 usage() {
   printf 'cm - cmake wrapper for common configurations\n\n'
-  printf 'usage: %s [-s] [-o] [-f cxx-flag]... [-g c-flag]... [-m] [-d] [-e] [-x] [-p path]... [-b project]... [-t target]... [-- [cmake-args...]] <path-to-source>\n' "$0"
+  printf 'usage: %s [-#] [-s] [-o] [-f cxx-flag]... [-g c-flag]... [-m] [-d] [-e] [-x] [-p path]... [-b project]... [-t target]... [-- [cmake-args...]] <path-to-source>\n' "$0"
+  printf '  -#: perform a dry run, only printing the CMake command line\n'
   printf '  -s: enable ASan and UBSan for LLVM\n'
   printf '  -o: enable options for building OpenCL\n'
   printf '  -f: append to CXX flags\n'
@@ -21,7 +22,7 @@ join() {
   printf '%s' "$*"
 }
 
-compiler_is_clang() {
+is_clang() {
   local CC="$CC"
   [[ -n $CC ]] || CC='cc'
   local CXX="$CXX"
@@ -35,11 +36,16 @@ is_building_llvm() {
   pwd | grep -q llvm-project
 }
 
+has_command() {
+  command -v "$1" >/dev/null
+}
+
 C_FLAGS=()
 CXX_FLAGS=()
 PREFIX_PATHS=()
 ENABLED_PROJECTS=()
 TARGETS_TO_BUILD=()
+DRY_RUN=0
 
 OPTS=('-GNinja'
       '-DCMAKE_BUILD_TYPE=Release'
@@ -47,24 +53,31 @@ OPTS=('-GNinja'
       '-DCMAKE_EXPORT_COMPILE_COMMANDS=On')
 
 if is_building_llvm; then
-  OPTS+=('-DLLVM_ENABLE_ASSERTIONS=On'
-         '-DLLVM_CCACHE_BUILD=On'
-	 '-DLLVM_CCACHE_MAXSIZE=256G')
+  OPTS+=('-DLLVM_ENABLE_ASSERTIONS=On')
+  if has_command ccache; then
+    OPTS+=('-DLLVM_CCACHE_BUILD=On'
+	   '-DLLVM_CCACHE_MAXSIZE=256G')
+  fi
 fi
 
-if compiler_is_clang; then
+if is_clang; then
   C_FLAGS+=('-fcolor-diagnostics')
   CXX_FLAGS+=('-fcolor-diagnostics')
-  OPTS+=('-DLLVM_USE_LINKER=lld')
+  if is_building_llvm; then
+    OPTS+=('-DLLVM_USE_LINKER=lld')
+  fi
 fi
 
 OPTIND=1
 
-while getopts ':sof:g:mdexp:b:t:' opt; do
+while getopts ':#sof:g:mdexp:b:t:' opt; do
   case "$opt" in
     h|\?)
       usage
       exit 0
+      ;;
+    '#')
+      DRY_RUN=1
       ;;
     s)
       if [[ -z $LIBCXX_ASAN_C_FLAGS || -z $LIBCXX_ASAN_CXX_FLAGS || -z $LIBCXX_ASAN_EXE_LINKER_FLAGS ]]; then
@@ -123,11 +136,13 @@ OPTS+=("-DCMAKE_CXX_FLAGS=$(join ' ' "${CXX_FLAGS[@]}")")
 OPTS+=("-DCMAKE_PREFIX_PATH=$(join ';' "${PREFIX_PATHS[@]}")")
 if [ ${#ENABLED_PROJECTS[@]} -ne 0 ]; then
   OPTS+=("-DLLVM_ENABLE_PROJECTS=$(join ';' "${ENABLED_PROJECTS[@]}")")
-else
+elif is_building_llvm; then
   OPTS+=("-DLLVM_ENABLE_PROJECTS=llvm;clang;lld")
 fi
 if [ ${#TARGETS_TO_BUILD[@]} -ne 0 ]; then
   OPTS+=("-DLLVM_TARGETS_TO_BUILD=$(join ';' "${TARGETS_TO_BUILD[@]}")")
+elif is_building_llvm; then
+  OPTS+=("-DLLVM_TARGETS_TO_BUILD=all")
 fi
 
 shift $((OPTIND-1))
@@ -135,4 +150,4 @@ shift $((OPTIND-1))
 
 rm -rf CMakeCache.txt CMakeFiles
 echo cmake "${OPTS[@]}" "$@"
-cmake "${OPTS[@]}" "$@"
+[ "$DRY_RUN" -eq 1 ] || cmake "${OPTS[@]}" "$@"
