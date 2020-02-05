@@ -173,10 +173,18 @@ au TermOpen * setlocal nonumber norelativenumber
 :nnoremap <C-A-h> :tabprevious<CR>
 :nnoremap <C-A-l> :tabnext<CR>
 
+" ctrl+alt+shift+{hl} to navigate tabs
+":tnoremap <C-A-S-H> <C-\><C-N> :tabmove -1<CR>
+":tnoremap <C-A-S-L> <C-\><C-N> :tabmove +1<CR>
+":inoremap <C-A-S-H> <C-\><C-N> :tabmove -1<CR>
+":inoremap <C-A-S-L> <C-\><C-N> :tabmove +1<CR>
+":nnoremap <C-A-S-H> :tabmove -1<CR>
+":nnoremap <C-A-S-L> :tabmove +1<CR>
+
 " alt+t to create new tab with terminal
 :tnoremap <A-t> <C-\><C-N>:tabedit<CR>:terminal<CR>a
 :inoremap <A-t> <C-\><C-N>:tabedit<CR>:terminal<CR>a
 :nnoremap <A-t> :tabedit<CR>:terminal<CR>a
 
 let $GIT_EDITOR = 'nvr -cc split --remote-wait'
-autocmd FileType gitcommit set bufhidden=delete
+autocmd FileType gitcommit,gitrebase set bufhidden=delete
