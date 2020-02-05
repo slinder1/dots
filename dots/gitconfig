@@ -1,7 +1,9 @@
 [user]
-	email = Scott.Linder@amd.com
-	name = Scott Linder
+    email = Scott.Linder@amd.com
+    name = Scott Linder
 [color]
-	ui = auto
+    ui = auto
 [alias]
-	co = checkout
+    co = checkout
+[rebase]
+    autoSquash = true
