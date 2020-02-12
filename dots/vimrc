@@ -20,6 +20,7 @@ Plug 'tpope/vim-sensible'
 Plug 'tpope/vim-sleuth'
 Plug 'vim-scripts/a.vim'
 Plug 'vimoutliner/vimoutliner'
+Plug 'webdevel/tabulous'
 call plug#end()
 
 "" VIM
@@ -47,6 +48,7 @@ set formatoptions+=2
 " Numbers
 set number
 set relativenumber
+au TermOpen * setlocal nonumber relativenumber
 
 " Search
 set incsearch
@@ -74,8 +76,52 @@ set undofile
 set comments-=://
 set comments+=:///,://
 
-" Terminal
-:tnoremap <Esc> <C-\><C-n>
+" We need a way to consistently get to normal mode no matter where we are,
+" ideally without having to leave the home row. Pick something that doesn't
+" seem to conflict with any control sequences in terminal emulators or any
+" utilities.
+inoremap <C-j> <C-\><C-n>
+tnoremap <C-j> <C-\><C-n>
+cnoremap <C-j> <C-\><C-n>
+
+" alt+{hjkl} to navigate windows
+tnoremap <A-h> <C-\><C-N><C-w>h
+tnoremap <A-j> <C-\><C-N><C-w>j
+tnoremap <A-k> <C-\><C-N><C-w>k
+tnoremap <A-l> <C-\><C-N><C-w>l
+inoremap <A-h> <C-\><C-N><C-w>h
+inoremap <A-j> <C-\><C-N><C-w>j
+inoremap <A-k> <C-\><C-N><C-w>k
+inoremap <A-l> <C-\><C-N><C-w>l
+nnoremap <A-h> <C-w>h
+nnoremap <A-j> <C-w>j
+nnoremap <A-k> <C-w>k
+nnoremap <A-l> <C-w>l
+
+" ctrl+alt+{hl} to navigate tabs
+tnoremap <C-A-h> <C-\><C-N> :tabprevious<CR>
+tnoremap <C-A-l> <C-\><C-N> :tabnext<CR>
+inoremap <C-A-h> <C-\><C-N> :tabprevious<CR>
+inoremap <C-A-l> <C-\><C-N> :tabnext<CR>
+nnoremap <C-A-h> :tabprevious<CR>
+nnoremap <C-A-l> :tabnext<CR>
+
+" ctrl+alt+shift+{hl} to navigate tabs
+"tnoremap <C-A-S-H> <C-\><C-N> :tabmove -1<CR>
+"tnoremap <C-A-S-L> <C-\><C-N> :tabmove +1<CR>
+"inoremap <C-A-S-H> <C-\><C-N> :tabmove -1<CR>
+"inoremap <C-A-S-L> <C-\><C-N> :tabmove +1<CR>
+"nnoremap <C-A-S-H> :tabmove -1<CR>
+"nnoremap <C-A-S-L> :tabmove +1<CR>
+
+" alt+t to create new tab with terminal
+tnoremap <A-t> <C-\><C-N>:tabedit<CR>:terminal<CR>a
+inoremap <A-t> <C-\><C-N>:tabedit<CR>:terminal<CR>a
+nnoremap <A-t> :tabedit<CR>:terminal<CR>a
+
+" git
+let $GIT_EDITOR = 'nvr -cc split --remote-wait'
+autocmd FileType gitcommit,gitrebase set bufhidden=delete
 
 "" Plugins
 
@@ -145,46 +191,7 @@ call neomake#configure#automake('w')
 " localvimrc
 let g:localvimrc_persistent = 2
 
-" exit terminal insert mode
-tnoremap <A-e> <C-\><C-n>
-
-" terminal specific options
-au TermOpen * setlocal nonumber norelativenumber
-
-" alt+{hjkl} to navigate windows
-:tnoremap <A-h> <C-\><C-N><C-w>h
-:tnoremap <A-j> <C-\><C-N><C-w>j
-:tnoremap <A-k> <C-\><C-N><C-w>k
-:tnoremap <A-l> <C-\><C-N><C-w>l
-:inoremap <A-h> <C-\><C-N><C-w>h
-:inoremap <A-j> <C-\><C-N><C-w>j
-:inoremap <A-k> <C-\><C-N><C-w>k
-:inoremap <A-l> <C-\><C-N><C-w>l
-:nnoremap <A-h> <C-w>h
-:nnoremap <A-j> <C-w>j
-:nnoremap <A-k> <C-w>k
-:nnoremap <A-l> <C-w>l
-
-" ctrl+alt+{hl} to navigate tabs
-:tnoremap <C-A-h> <C-\><C-N> :tabprevious<CR>
-:tnoremap <C-A-l> <C-\><C-N> :tabnext<CR>
-:inoremap <C-A-h> <C-\><C-N> :tabprevious<CR>
-:inoremap <C-A-l> <C-\><C-N> :tabnext<CR>
-:nnoremap <C-A-h> :tabprevious<CR>
-:nnoremap <C-A-l> :tabnext<CR>
-
-" ctrl+alt+shift+{hl} to navigate tabs
-":tnoremap <C-A-S-H> <C-\><C-N> :tabmove -1<CR>
-":tnoremap <C-A-S-L> <C-\><C-N> :tabmove +1<CR>
-":inoremap <C-A-S-H> <C-\><C-N> :tabmove -1<CR>
-":inoremap <C-A-S-L> <C-\><C-N> :tabmove +1<CR>
-":nnoremap <C-A-S-H> :tabmove -1<CR>
-":nnoremap <C-A-S-L> :tabmove +1<CR>
-
-" alt+t to create new tab with terminal
-:tnoremap <A-t> <C-\><C-N>:tabedit<CR>:terminal<CR>a
-:inoremap <A-t> <C-\><C-N>:tabedit<CR>:terminal<CR>a
-:nnoremap <A-t> :tabedit<CR>:terminal<CR>a
-
-let $GIT_EDITOR = 'nvr -cc split --remote-wait'
-autocmd FileType gitcommit,gitrebase set bufhidden=delete
+" tabulous
+let g:tabulousLabelLeftStr = ' '
+let g:tabulousLabelRightStr = '｜'
+let g:tabulousLabelNameOptions = ':t'

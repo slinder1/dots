@@ -57,9 +57,9 @@ v() {
   fi
   nvim "$@"
 }
-alias vs='nvr -o'
-alias vv='nvr -O'
-alias vt='nvr -p'
+alias sp='nvr -o'
+alias vsp='nvr -O'
+alias tabe='nvr -p'
 alias vd='nvr -d'
 alias vp='nvr -l'
 f() {
