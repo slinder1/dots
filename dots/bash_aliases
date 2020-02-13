@@ -55,7 +55,11 @@ v() {
     printf "unset NVIM_LISTEN_ADDRESS and try again\n" >&2
     return 1
   fi
-  nvim "$@"
+  if [ $# -gt 0 ]; then
+    nvim "$@"
+  else
+    nvim +term +starti
+  fi
 }
 alias sp='nvr -o'
 alias vsp='nvr -O'

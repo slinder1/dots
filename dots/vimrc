@@ -18,9 +18,9 @@ Plug 'scrooloose/nerdtree'
 Plug 'tpope/vim-abolish'
 Plug 'tpope/vim-sensible'
 Plug 'tpope/vim-sleuth'
+Plug 'vim-airline/vim-airline'
 Plug 'vim-scripts/a.vim'
 Plug 'vimoutliner/vimoutliner'
-Plug 'webdevel/tabulous'
 call plug#end()
 
 "" VIM
@@ -55,11 +55,9 @@ set incsearch
 set ignorecase
 set smartcase
 
-" Modeline
-set modeline
-
 " Context
 set scrolloff=2
+au TermOpen * setlocal scrolloff=0
 
 " Remember last lines
 au BufReadPost * if line("'\"") > 0 && line("'\"") <= line("$")
@@ -84,40 +82,10 @@ inoremap <C-j> <C-\><C-n>
 tnoremap <C-j> <C-\><C-n>
 cnoremap <C-j> <C-\><C-n>
 
-" alt+{hjkl} to navigate windows
-tnoremap <A-h> <C-\><C-N><C-w>h
-tnoremap <A-j> <C-\><C-N><C-w>j
-tnoremap <A-k> <C-\><C-N><C-w>k
-tnoremap <A-l> <C-\><C-N><C-w>l
-inoremap <A-h> <C-\><C-N><C-w>h
-inoremap <A-j> <C-\><C-N><C-w>j
-inoremap <A-k> <C-\><C-N><C-w>k
-inoremap <A-l> <C-\><C-N><C-w>l
-nnoremap <A-h> <C-w>h
-nnoremap <A-j> <C-w>j
-nnoremap <A-k> <C-w>k
-nnoremap <A-l> <C-w>l
-
-" ctrl+alt+{hl} to navigate tabs
-tnoremap <C-A-h> <C-\><C-N> :tabprevious<CR>
-tnoremap <C-A-l> <C-\><C-N> :tabnext<CR>
-inoremap <C-A-h> <C-\><C-N> :tabprevious<CR>
-inoremap <C-A-l> <C-\><C-N> :tabnext<CR>
-nnoremap <C-A-h> :tabprevious<CR>
-nnoremap <C-A-l> :tabnext<CR>
-
-" ctrl+alt+shift+{hl} to navigate tabs
-"tnoremap <C-A-S-H> <C-\><C-N> :tabmove -1<CR>
-"tnoremap <C-A-S-L> <C-\><C-N> :tabmove +1<CR>
-"inoremap <C-A-S-H> <C-\><C-N> :tabmove -1<CR>
-"inoremap <C-A-S-L> <C-\><C-N> :tabmove +1<CR>
-"nnoremap <C-A-S-H> :tabmove -1<CR>
-"nnoremap <C-A-S-L> :tabmove +1<CR>
-
 " alt+t to create new tab with terminal
-tnoremap <A-t> <C-\><C-N>:tabedit<CR>:terminal<CR>a
-inoremap <A-t> <C-\><C-N>:tabedit<CR>:terminal<CR>a
-nnoremap <A-t> :tabedit<CR>:terminal<CR>a
+tnoremap <A-t> <C-\><C-N>:tabe +term<CR>a
+inoremap <A-t> <C-\><C-N>:tabe +term<CR>a
+nnoremap <A-t> :tabe +term<CR>a
 
 " git
 let $GIT_EDITOR = 'nvr -cc split --remote-wait'
@@ -193,5 +161,13 @@ let g:localvimrc_persistent = 2
 
 " tabulous
 let g:tabulousLabelLeftStr = ' '
-let g:tabulousLabelRightStr = '｜'
+let g:tabulousLabelRightStr = '❘'
 let g:tabulousLabelNameOptions = ':t'
+
+" vim-airline
+let g:airline_powerline_fonts = 1
+let g:airline#extensions#tabline#enabled = 1
+let g:airline#extensions#tabline#show_tab_nr = 1
+" show tab number, not number of splits
+let g:airline#extensions#tabline#tab_nr_type = 1
+set noshowmode
