@@ -48,7 +48,8 @@ sudo sh -c 'cat >/etc/docker/daemon.json' <<EOF
     "dns": ["10.234.250.9"],
     "insecure-registries": [
         "compute-artifactory.amd.com:5000",
-        "compute-artifactory.amd.com:5001"
+        "compute-artifactory.amd.com:5001",
+        "appperflab-1.amd.com:5000"
     ],
     "storage-driver": "overlay2"
 }
