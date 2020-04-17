@@ -1,0 +1,13 @@
+set imap_user=scott@scottlinder.com
+set folder=imaps://mail.gandi.net:993/
+set spoolfile=$folder
+set record="+Sent"
+set smtp_url=smtp://$imap_user@mail.gandi.net:587/
+set ssl_starttls=yes
+set ssl_force_tls=yes
+set realname="Scott Linder"
+set from=scott@scottlinder.com
+set use_from=yes
+set imap_check_subscribed
+set mail_check=60
+set header_cache=~/.hcache

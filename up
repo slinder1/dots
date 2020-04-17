@@ -63,6 +63,7 @@ link dots/i3config ~/.config/i3/config
 link dots/bash_aliases ~/.bash_aliases
 link dots/gitconfig ~/.gitconfig
 link dots/inputrc ~/.inputrc
+link dots/muttrc ~/.muttrc
 
 for b in "$INIT_DIR"/bin/*; do
   b=$(basename "$b")
