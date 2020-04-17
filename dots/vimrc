@@ -16,6 +16,7 @@ Plug 'rhysd/vim-clang-format'
 Plug 'scott-linder/molokai'
 Plug 'scrooloose/nerdtree'
 Plug 'tpope/vim-abolish'
+Plug 'tpope/vim-fugitive'
 Plug 'tpope/vim-sensible'
 Plug 'tpope/vim-sleuth'
 Plug 'vim-airline/vim-airline'
@@ -30,12 +31,21 @@ colorscheme molokai
 set fillchars=vert:│,fold:─,diff:─
 set t_Co=256
 set nohlsearch
+set signcolumn=yes
+set background=dark
 
 " Lines
 set colorcolumn=81,82
 set nojoinspaces
 set wrap
 set linebreak
+
+" Buffers
+set hidden
+
+" Sign Column
+set signcolumn="yes"
+au TermOpen * setlocal signcolumn="no"
 
 " Tabs
 set expandtab
@@ -90,6 +100,11 @@ nnoremap <A-t> :tabe +term<CR>a
 " git
 let $GIT_EDITOR = 'nvr -cc split --remote-wait'
 autocmd FileType gitcommit,gitrebase set bufhidden=delete
+
+" Mutt mail
+augroup filetypedetect
+  autocmd BufNewFile,BufRead *mutt-* setf mail
+augroup END
 
 "" Plugins
 
@@ -154,7 +169,9 @@ nnoremap <C-o> :Buffers<cr>
 nnoremap <C-p> :Files<cr>
 
 " NeoMake
-call neomake#configure#automake('w')
+call neomake#configure#automake('nw')
+let g:neomake_c_enabled_makers = ['clangcheck', 'clangtidy']
+let g:neomake_cpp_enabled_makers = ['clangcheck', 'clangtidy']
 
 " localvimrc
 let g:localvimrc_persistent = 2
