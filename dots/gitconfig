@@ -7,3 +7,8 @@
     co = checkout
 [rebase]
     autoSquash = true
+[sendemail]
+    smtpEncryption = plain
+    smtpServer = mail.gandi.net
+    smtpUser = scott@scottlinder.com
+    smtpServerPort = 587
