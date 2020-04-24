@@ -1,4 +1,4 @@
-"" Plug
+"" plug
 
 call plug#begin('~/.vim/plugged')
 Plug 'airblade/vim-gitgutter'
@@ -20,6 +20,7 @@ Plug 'tpope/vim-fugitive'
 Plug 'tpope/vim-sensible'
 Plug 'tpope/vim-sleuth'
 Plug 'vim-airline/vim-airline'
+Plug 'vim-airline/vim-airline-themes'
 Plug 'vim-scripts/a.vim'
 Plug 'vimoutliner/vimoutliner'
 call plug#end()
@@ -28,10 +29,9 @@ call plug#end()
 
 " Looks
 colorscheme molokai
-set fillchars=vert:│,fold:─,diff:─
+set fillchars=vert:\|,fold:-,diff:-
 set t_Co=256
 set nohlsearch
-set signcolumn=yes
 set background=dark
 
 " Lines
@@ -42,10 +42,15 @@ set linebreak
 
 " Buffers
 set hidden
+command BB b#|bd#
 
 " Sign Column
 set signcolumn="yes"
 au TermOpen * setlocal signcolumn="no"
+
+" List
+set list
+set listchars=tab:<->
 
 " Tabs
 set expandtab
@@ -100,6 +105,8 @@ nnoremap <A-t> :tabe +term<CR>a
 " git
 let $GIT_EDITOR = 'nvr -cc split --remote-wait'
 autocmd FileType gitcommit,gitrebase set bufhidden=delete
+
+autocmd BufNewFile,BufRead *mutt-* set spell
 
 " Mutt mail
 augroup filetypedetect
@@ -182,6 +189,7 @@ let g:tabulousLabelRightStr = '❘'
 let g:tabulousLabelNameOptions = ':t'
 
 " vim-airline
+let g:airline_theme = 'base16_snazzy'
 let g:airline_powerline_fonts = 1
 let g:airline#extensions#tabline#enabled = 1
 let g:airline#extensions#tabline#show_tab_nr = 1
