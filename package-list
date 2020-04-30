@@ -6,6 +6,7 @@ bridge-utils
 build-essential
 ccache
 chromium-browser
+cifs-utils
 cmake
 curl
 devscripts
