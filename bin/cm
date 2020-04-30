@@ -56,7 +56,7 @@ if is_building_llvm; then
   OPTS+=('-DLLVM_ENABLE_ASSERTIONS=On')
   if has_command ccache; then
     OPTS+=('-DLLVM_CCACHE_BUILD=On'
-	   '-DLLVM_CCACHE_MAXSIZE=256G')
+           '-DLLVM_CCACHE_MAXSIZE=256G')
   fi
 fi
 
@@ -81,22 +81,24 @@ while getopts ':#sof:g:mdexp:b:t:' opt; do
       ;;
     s)
       if [[ -z $LIBCXX_ASAN_C_FLAGS || -z $LIBCXX_ASAN_CXX_FLAGS || -z $LIBCXX_ASAN_EXE_LINKER_FLAGS ]]; then
-	printf 'error: LIBCXX_ASAN_C_FLAGS and LIBCXX_ASAN_CXX_FLAGS and LIBCXX_ASAN_EXE_LINKER_FLAGS must be set!\n'
-	exit 1
+        printf 'error: LIBCXX_ASAN_C_FLAGS and LIBCXX_ASAN_CXX_FLAGS and LIBCXX_ASAN_EXE_LINKER_FLAGS must be set!\n' >&2
+        exit 1
       fi
       ASAN_FLAGS='-fsanitize=address,undefined -fno-sanitize=vptr,function -fno-sanitize-recover=all'
       C_FLAGS+=("$LIBCXX_ASAN_C_FLAGS $ASAN_FLAGS")
       CXX_FLAGS+=("$LIBCXX_ASAN_CXX_FLAGS $ASAN_FLAGS")
-      OPTS+=('-DLLVM_USE_SANITIZER=Address;Undefined'
-	     '-DCMAKE_SHARED_LINKER_FLAGS=-stdlib=libc++'
-	     '-DCMAKE_MODULE_LINKER_FLAGS=-stdlib=libc++'
-	     "-DCMAKE_EXE_LINKER_FLAGS=$LIBCXX_ASAN_EXE_LINKER_FLAGS -stdlib=libc++"
-	     '-DLLVM_PARALLEL_LINK_JOBS=2')
+      if is_building_llvm; then
+        OPTS+=('-DLLVM_USE_SANITIZER=Address;Undefined'
+               '-DLLVM_PARALLEL_LINK_JOBS=2')
+      fi
+      OPTS+=('-DCMAKE_SHARED_LINKER_FLAGS=-stdlib=libc++'
+             '-DCMAKE_MODULE_LINKER_FLAGS=-stdlib=libc++'
+             "-DCMAKE_EXE_LINKER_FLAGS=$LIBCXX_ASAN_EXE_LINKER_FLAGS -stdlib=libc++")
       ;;
     o)
       OPTS+=('-DCLANG_ENABLE_STATIC_ANALYZER=On'
-	     '-DLLVM_TARGETS_TO_BUILD=AMDGPU;X86' '-DLLVM_BUILD_TOOLS=On'
-	     '-DLLVM_INCLUDE_TESTS=On')
+             '-DLLVM_TARGETS_TO_BUILD=AMDGPU;X86' '-DLLVM_BUILD_TOOLS=On'
+             '-DLLVM_INCLUDE_TESTS=On')
       ;;
     f)
       CXX_FLAGS+=("$OPTARG")
@@ -108,12 +110,14 @@ while getopts ':#sof:g:mdexp:b:t:' opt; do
       OPTS+=('-GUnix Makefiles')
       ;;
     d)
-      OPTS+=('-DCMAKE_BUILD_TYPE=Debug' '-DLLVM_PARALLEL_LINK_JOBS=2'
-	     '-DLLVM_OPTIMIZED_TABLEGEN=On')
+      OPTS+=('-DCMAKE_BUILD_TYPE=Debug')
+      if is_building_llvm; then
+        OPTS+=('-DLLVM_PARALLEL_LINK_JOBS=2' '-DLLVM_OPTIMIZED_TABLEGEN=On')
+      fi
       ;;
     e)
       OPTS+=('-DLLVM_ENABLE_EXPENSIVE_CHECKS=On' '-DLLVM_ENABLE_WERROR=Off'
-	     '-DLLVM_OPTIMIZED_TABLEGEN=On')
+             '-DLLVM_OPTIMIZED_TABLEGEN=On')
       ;;
     x)
       OPTS+=('-DLLVM_BUILD_DOCS=On' '-DLLVM_ENABLE_SPHINX=On')
@@ -149,5 +153,7 @@ shift $((OPTIND-1))
 [ "${1:-}" = '--' ] && shift
 
 rm -rf CMakeCache.txt CMakeFiles
-echo cmake "${OPTS[@]}" "$@"
+printf "cmake "
+printf "'%s' " "${OPTS[@]}" "$@"
+printf "\n"
 [ "$DRY_RUN" -eq 1 ] || cmake "${OPTS[@]}" "$@"
