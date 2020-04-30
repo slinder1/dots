@@ -12,3 +12,7 @@
     smtpServer = mail.gandi.net
     smtpUser = scott@scottlinder.com
     smtpServerPort = 587
+[core]
+    pager = delta --file-color white --hunk-color white --dark
+[interactive]
+    diffFilter = delta --file-color white --hunk-color white --dark --color-only
