@@ -2,17 +2,11 @@
 
 set -e
 
-INIT_DIR=$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")
+cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"
+
 DEB_ROCM_REPO=http://repo.radeon.com/rocm/apt/debian/
 DEB_ROCM_CONF=/etc/apt/sources.list.d/rocm.list
 export DEBIAN_FRONTEND=noninteractive
-
-link() {
-  local TARGET="$1"; shift
-  local LINK_NAME="$1"; shift
-  mkdir -p "$(dirname "$LINK_NAME")"
-  ln -sf "$INIT_DIR/$TARGET" "$LINK_NAME"
-}
 
 deb() {
   local CMD="$1"; shift
@@ -26,7 +20,7 @@ deb() {
   fi
 }
 
-xargs sudo apt-get install -y <"$INIT_DIR/package-list"
+xargs sudo apt-get install -y <package-list
 
 pip3 install --user neovim-remote MozPhab
 
@@ -57,26 +51,26 @@ sudo sh -c 'cat >/etc/docker/daemon.json' <<EOF
 EOF
 sudo systemctl restart docker
 
-link dots/vimrc ~/.vimrc
-link dots/vimrc ~/.config/nvim/init.vim
-link dots/tmux.conf ~/.tmux.conf
-link dots/gdbinit ~/.gdbinit
-link dots/i3config ~/.config/i3/config
-link dots/bash_aliases ~/.bash_aliases
-link dots/gitconfig ~/.gitconfig
-link dots/inputrc ~/.inputrc
-link dots/muttrc ~/.muttrc
-
-for b in "$INIT_DIR"/bin/*; do
-  b=$(basename "$b")
-  link bin/"$b" ~/bin/"$b"
+for d in dots/*; do
+  if [ -d "$d" ]; then
+    ln -sf "$(readlink -f "$d")" \
+      "${XDG_CONFIG_HOME:-$HOME/.config}/$(basename "$d")"
+  else
+    ln -sf "$(readlink -f "$d")" ~/."$(basename "$d")"
+  fi
 done
 
-link up ~/bin/up
+for b in bin/*; do
+  ln -sf "$(readlink -f "$b")" ~/bin/"$(basename "$b")"
+done
 
-if [ ! -f ~/.local/share/nvim/site/autoload/plug.vim ]; then
-  curl -fLo ~/.local/share/nvim/site/autoload/plug.vim --create-dirs \
+ln -sf "$(readlink -f up)" ~/bin/up
+
+PLUG="${XDG_DATA_HOME:-$HOME/.local/share}/nvim/site/autoload/plug.vim"
+if [ ! -f "$PLUG" ]; then
+  curl -fLo "$PLUG" --create-dirs \
     https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
+  nvim -es -c :PlugInstall -c :qa
 fi
 
 if ! dpkg -l | grep rocm -q; then

@@ -1,64 +1,29 @@
-"" plug
-
-call plug#begin('~/.vim/plugged')
-Plug 'airblade/vim-gitgutter'
-Plug 'antiagainst/vim-tablegen'
-Plug 'dag/vim-fish'
-Plug 'embear/vim-localvimrc'
-Plug 'gerw/vim-latex-suite'
-Plug 'junegunn/fzf'
-Plug 'junegunn/fzf.vim'
-Plug 'mattn/emmet-vim'
-Plug 'neomake/neomake'
-Plug 'ntpeters/vim-better-whitespace'
-Plug 'octol/vim-cpp-enhanced-highlight'
-Plug 'rhysd/vim-clang-format'
-Plug 'scott-linder/molokai'
-Plug 'scrooloose/nerdtree'
-Plug 'tpope/vim-abolish'
-Plug 'tpope/vim-fugitive'
-Plug 'tpope/vim-sensible'
-Plug 'tpope/vim-sleuth'
-Plug 'vim-airline/vim-airline'
-Plug 'vim-airline/vim-airline-themes'
-Plug 'vim-scripts/a.vim'
-Plug 'vimoutliner/vimoutliner'
-call plug#end()
-
 "" VIM
 
 " Looks
-colorscheme molokai
-set fillchars=vert:\|,fold:-,diff:-
-set t_Co=256
-set nohlsearch
-set background=dark
-
-" Lines
-set colorcolumn=81,82
-set nojoinspaces
+set fillchars=vert:│,fold:─,diff:─
+set list
+set listchars=tab:»·,trail:·
 set wrap
 set linebreak
 
-" Buffers
-set hidden
-command BB b#|bd#
-
-" Sign Column
+" Columns
+set colorcolumn=81,82
 set signcolumn="yes"
 au TermOpen * setlocal signcolumn="no"
 
-" List
-set list
-set listchars=tab:<->
+" Paragraphs
+set nojoinspaces
+set formatoptions+=2
+
+" Buffers
+set hidden
+command! BB b#|bd#
 
 " Tabs
 set expandtab
 set tabstop=8
 set shiftwidth=4
-
-" Paragraphs
-set formatoptions+=2
 
 " Numbers
 set number
@@ -69,25 +34,17 @@ au TermOpen * setlocal nonumber relativenumber
 set incsearch
 set ignorecase
 set smartcase
+set nohlsearch
 
 " Context
 set scrolloff=2
 au TermOpen * setlocal scrolloff=0
 
-" Remember last lines
-au BufReadPost * if line("'\"") > 0 && line("'\"") <= line("$")
-    \| exe "normal g'\"" | endif
-
 " Persistent undo
-if isdirectory($HOME . '/.vim/undo') == 0
-    :silent !mkdir -p ~/.vim/undo >/dev/null 2>&1
-endif
-set undodir=~/.vim/undo//
 set undofile
 
 " Doxygen comments
-set comments-=://
-set comments+=:///,://
+setlocal comments-=:// | setlocal comments+=:///,://
 
 " We need a way to consistently get to normal mode no matter where we are,
 " ideally without having to leave the home row. Pick something that doesn't
@@ -114,6 +71,33 @@ augroup filetypedetect
 augroup END
 
 "" Plugins
+call plug#begin(stdpath('data') . '/plugged')
+Plug 'airblade/vim-gitgutter'
+Plug 'antiagainst/vim-tablegen'
+Plug 'dag/vim-fish'
+Plug 'embear/vim-localvimrc'
+Plug 'gerw/vim-latex-suite'
+Plug 'junegunn/fzf'
+Plug 'junegunn/fzf.vim'
+Plug 'mattn/emmet-vim'
+Plug 'neomake/neomake'
+Plug 'ntpeters/vim-better-whitespace'
+Plug 'octol/vim-cpp-enhanced-highlight'
+Plug 'rhysd/vim-clang-format'
+Plug 'scott-linder/molokai'
+Plug 'scrooloose/nerdtree'
+Plug 'tpope/vim-abolish'
+Plug 'tpope/vim-fugitive'
+Plug 'tpope/vim-sensible'
+Plug 'tpope/vim-sleuth'
+Plug 'vim-airline/vim-airline'
+Plug 'vim-airline/vim-airline-themes'
+Plug 'vim-scripts/a.vim'
+Plug 'vimoutliner/vimoutliner'
+call plug#end()
+
+" Molokai
+colorscheme molokai
 
 " A
 let g:alternateExtensions_cc = "hh"
