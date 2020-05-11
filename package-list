@@ -5,7 +5,6 @@ bison
 bridge-utils
 build-essential
 ccache
-chromium-browser
 cifs-utils
 cmake
 curl
@@ -18,10 +17,8 @@ flex
 g++-4.8
 gcc-multilib
 git
-golang-go
 google-perftools
 htop
-i3
 kernel-wedge
 libc++1
 libc6-dev-i386
@@ -46,10 +43,6 @@ libunwind-dev
 libvirt-bin
 libwaffle-dev
 libxkbcommon-dev
-llvm
-llvm-dev
-llvm-runtime
-nfs-kernel-server
 ninja-build
 pandoc
 pkg-config
@@ -65,11 +58,9 @@ rpm
 shellcheck
 ssh
 subversion
-sxiv
 texinfo
 tmux
 tree
 virtinst
-xsel
 zlib1g-dev
 mutt
