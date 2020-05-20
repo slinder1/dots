@@ -1,17 +1,15 @@
 #!/bin/bash
 
-set -e
+set -euo pipefail
 
 cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"
 
-DEB_ROCM_REPO=http://repo.radeon.com/rocm/apt/debian/
-DEB_ROCM_CONF=/etc/apt/sources.list.d/rocm.list
 export DEBIAN_FRONTEND=noninteractive
 
 deb() {
   local CMD="$1"; shift
   local URL="$1"; shift
-  if ! which "$CMD" >/dev/null; then
+  if ! hash "$CMD" 2>/dev/null; then
     local TMP
     TMP="$(mktemp)"
     curl -fLo "$TMP" "$URL"
@@ -20,22 +18,25 @@ deb() {
   fi
 }
 
-xargs sudo apt-get install -y <package-list
+xargs sudo apt-get install -qq <package-list
 
-pip3 install --user neovim-remote MozPhab
+NVIM=/usr/local/bin/nvim.appimage
+[ -f "$NVIM" ] || \
+  sudo curl -sfLo "$NVIM" \
+    https://github.com/neovim/neovim/releases/download/stable/nvim.appimage
+sudo chmod a+x "$NVIM"
+for alt in ex vi view vim vimdiff nvim; do
+  sudo update-alternatives --install "/usr/bin/$alt" "$alt" "$NVIM" 110
+done
 
-mkdir -p ~/bin
-
-[ -f ~/bin/nvim ] || \
-  curl -fLo ~/bin/nvim https://github.com/neovim/neovim/releases/download/v0.4.3/nvim.appimage
-chmod u+x ~/bin/nvim
+sudo -H pip3 -q install neovim-remote cmake
 
 deb fd https://github.com/sharkdp/fd/releases/download/v7.4.0/fd-musl_7.4.0_amd64.deb
 deb rg https://github.com/BurntSushi/ripgrep/releases/download/11.0.2/ripgrep_11.0.2_amd64.deb
 deb bat https://github.com/sharkdp/bat/releases/download/v0.12.1/bat_0.12.1_amd64.deb
 deb delta https://github.com/dandavison/delta/releases/download/0.1.1/git-delta_0.1.1_amd64.deb
 
-if ! which docker >/dev/null; then
+if ! hash docker 2>/dev/null; then
   curl -fsSL get.docker.com | sudo sh
 fi
 sudo sh -c 'cat >/etc/docker/daemon.json' <<EOF
@@ -60,10 +61,10 @@ for d in dots/*; do
   fi
 done
 
+mkdir -p ~/bin
 for b in bin/*; do
   ln -sf "$(readlink -f "$b")" ~/bin/"$(basename "$b")"
 done
-
 ln -sf "$(readlink -f up)" ~/bin/up
 
 PLUG="${XDG_DATA_HOME:-$HOME/.local/share}/nvim/site/autoload/plug.vim"
@@ -73,11 +74,10 @@ if [ ! -f "$PLUG" ]; then
   nvim -es -c :PlugInstall -c :qa
 fi
 
-if ! dpkg -l | grep rocm -q; then
-  wget -qO - "$DEB_ROCM_REPO/rocm.gpg.key" | sudo apt-key add -
-  sudo sh -c "echo deb [arch=amd64] $DEB_ROCM_REPO xenial main > $DEB_ROCM_CONF"
-  sudo apt-get update -y
-  sudo apt-get install -y rocm-dkms
-fi
-
 sudo usermod -a -G video "$USER"
+
+# Hard to silence this without also silencing when it fails, but it prints "OK"
+# when the key is added, so just put it at the end so the "OK" also reflects
+# the result of this script.
+curl -sfL https://repo.radeon.com/rocm/apt/debian/rocm.gpg.key \
+  | sudo apt-key add -

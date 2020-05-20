@@ -6,7 +6,6 @@ bridge-utils
 build-essential
 ccache
 cifs-utils
-cmake
 curl
 devscripts
 dkms

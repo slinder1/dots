@@ -1,8 +1,9 @@
 #!/bin/bash
 
 usage() {
-  printf 'rocm-sources - update /etc/apt/sources.list.d/rocm.list to a specific OSDB build\n\n' 
-  printf 'usage: %s [-h] <build-id> <build-number>\n' "$0"
+  >&2 printf 'rocm-sources - update /etc/apt/sources.list.d/rocm.list to either\n'
+  >&2 printf '               the latest ROCm release or a specific OSDB build\n\n'
+  >&2 printf 'usage: %s [-h] [build-id build-number]\n' "$0"
 }
 
 OPTIND=1
@@ -18,12 +19,16 @@ done
 
 shift $((OPTIND-1))
 
-if [ $# -ne 2 ]; then
+if [ $# -ne 0 ] && [ $# -ne 2 ]; then
     usage
     exit 1
 fi
 
-printf "sudo sh -c \"echo 'deb [arch=amd64 trusted=yes] http://compute-artifactory.amd.com/artifactory/list/rocm-osdb-deb/ %s %s' >/etc/apt/sources.list.d/rocm.list\"\n" \
-  "$1" "$2"
-printf "deb [arch=amd64 trusted=yes] http://compute-artifactory.amd.com/artifactory/list/rocm-osdb-deb/ %s %s\n" \
-  "$1" "$2" >/etc/apt/sources.list.d/rocm.list
+if [ $# -eq 0 ]; then
+  SOURCE="deb [arch=amd64] http://repo.radeon.com/rocm/apt/debian/ xenial main"
+else
+  SOURCE=$(printf \
+    "deb [arch=amd64 trusted=yes] http://compute-artifactory.amd.com/artifactory/list/rocm-osdb-deb/ %s %s" "$1" "$2")
+fi
+
+printf "%s\n" "$SOURCE" | sudo tee /etc/apt/sources.list.d/rocm.list
