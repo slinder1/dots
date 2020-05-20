@@ -18,6 +18,7 @@ set formatoptions+=2
 
 " Buffers
 set hidden
+command! -nargs=1 E e <args>|bd#
 command! BB b#|bd#
 
 " Tabs
