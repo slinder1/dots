@@ -19,6 +19,7 @@ gcc-multilib
 git
 google-perftools
 htop
+jq
 kernel-wedge
 libc++1
 libc6-dev-i386

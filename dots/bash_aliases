@@ -110,6 +110,36 @@ bell() {
   echo -e '\a'
 }
 
+# Phabricator/arc try to be too clever, which would be nice if they failed
+# less frequently. There also seems to be a lot of gotchas in the command-line
+# workflow which do not seem to have been thought of upstream. Build a
+# new set of primitives that "always work".
+
+# If phab-pull fails we are left fending for ourselves to try to reconstruct
+# the canonical commit message for a revision. Also, if the remote revision
+# is updated by anyone else (i.e. they add themselves as a reviewer, or they
+# add a tag) we may overwrite it accidentally if we fail to pull down the
+# message before pushing. Add a simple way to fetch it.
+# TODO: Automatically try to merge the upstream version and the local version
+# before pushing.
+phab-msg() {
+  if [ $# -ne 1 ]; then
+    printf "usage: phab-msg revision-id\n" >&2
+    return 1
+  fi
+  local REV_ID
+  REV_ID=$(printf "%s" "$1" | sed 's/^D\([0-9]\+\)$/\1/')
+  printf '{ "revision_id": "%s" }' "$REV_ID" \
+    | arc call-conduit differential.getcommitmessage \
+    | jq -r '.["response"]'
+}
+phab-pull() {
+  arc patch --skip-dependencies --nobranch "$@"
+}
+phab-push() {
+  arc diff --edit --verbatim HEAD^
+}
+
 alias drun='sudo docker run -it --network=host --device=/dev/kfd --device=/dev/dri --group-add video --cap-add=SYS_PTRACE --security-opt seccomp=unconfined -v $HOME:/dockerx -v $SSH_AUTH_SOCK:/ssh-auth-sock -e SSH_AUTH_SOCK=/ssh-auth-sock'
 
 windows() {
