@@ -44,6 +44,7 @@ libunwind-dev
 libvirt-bin
 libwaffle-dev
 libxkbcommon-dev
+mutt
 ninja-build
 pandoc
 pkg-config
@@ -64,4 +65,3 @@ tmux
 tree
 virtinst
 zlib1g-dev
-mutt
