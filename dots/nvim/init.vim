@@ -20,6 +20,7 @@ set formatoptions+=2
 set hidden
 command! -nargs=1 E e <args>|bd#
 command! BB b#|bd#
+command! BD w|bd
 
 " Tabs
 set expandtab
@@ -61,7 +62,6 @@ inoremap <A-t> <C-\><C-N>:tabe +term<CR>a
 nnoremap <A-t> :tabe +term<CR>a
 
 " git
-let $GIT_EDITOR = 'nvr -cc split --remote-wait'
 autocmd FileType gitcommit,gitrebase set bufhidden=delete
 
 autocmd BufNewFile,BufRead *mutt-* set spell
