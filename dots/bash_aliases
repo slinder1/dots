@@ -1,18 +1,27 @@
 #!/bin/bash
 
-# don't put duplicate lines or lines starting with space in the history.
-# See bash(1) for more options
-HISTCONTROL=ignoreboth
+# Abuse ~/.bash_aliases as the one place to configure bash. This assumes that
+# whatever file bash sources for login shells (i.e. /etc/profile, ~/.profile or
+# ~/.bash_profile) and interactive shells (i.e. ~/.bashrc) includes this file,
+# directly or indirectly. This seems to be the case for e.g. modern Ubuntu.
 
-# append to the history file, don't overwrite it
+# Some arcane garbage that has the effect of "synchronizing" history between
+# all instances of bash via ~/.bash_history, while also avoiding polluting
+# it with useless/duplicate commands. See bash(1), `help history`, and
+# https://unix.stackexchange.com/questions/18212#answer-18443 for details. Not
+# entirely convinced this actually works, but it is better than nothing.
+
+# Append to the history file, don't overwrite it.
 shopt -s histappend
-
-# for setting history length see HISTSIZE and HISTFILESIZE in bash(1)
-HISTSIZE=1000000
-HISTFILESIZE=2000000
-
-# ignore commands which pollute history
+# Don't save duplicate lines or lines starting with space.
+HISTCONTROL=ignoreboth:erasedups
+# Never truncate history.
+HISTSIZE=-1
+HISTFILESIZE=-1
+# Ignore commands which pollute history.
 HISTIGNORE='ls:l:ll:cd:pwd:bg:fg:history'
+# Fuss about with the history file: read-append, write-dedup, clear, read
+PROMPT_COMMAND="history -n; history -w; history -c; history -r; $PROMPT_COMMAND"
 
 fixssh() {
   eval "$(tmux show-env -s | grep '^SSH_')"
@@ -32,7 +41,6 @@ else
   start_agent
 fi
 
-PROMPT_COMMAND="history -a; history -c; history -r; $PROMPT_COMMAND"
 GIT_PS1_SHOWCOLORHINTS=1
 extra_git_ps1() {
   local FORMAT="$1"
