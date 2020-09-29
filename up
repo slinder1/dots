@@ -4,8 +4,6 @@ set -euo pipefail
 
 cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"
 
-export DEBIAN_FRONTEND=noninteractive
-
 deb() {
   local CMD="$1"; shift
   local URL="$1"; shift
@@ -23,7 +21,7 @@ xargs sudo apt-get install -qq <package-list
 NVIM=/usr/local/bin/nvim.appimage
 [ -f "$NVIM" ] || \
   sudo curl -sfLo "$NVIM" \
-    https://github.com/neovim/neovim/releases/download/stable/nvim.appimage
+    https://github.com/neovim/neovim/releases/download/nightly/nvim.appimage
 sudo chmod a+x "$NVIM"
 for alt in ex vi view vim vimdiff nvim; do
   sudo update-alternatives --install "/usr/bin/$alt" "$alt" "$NVIM" 110
@@ -52,10 +50,12 @@ sudo sh -c 'cat >/etc/docker/daemon.json' <<EOF
 EOF
 sudo systemctl restart docker
 
+sudo snap install node --classic --channel=10
+
 for d in dots/*; do
   if [ -d "$d" ]; then
     ln -sf "$(readlink -f "$d")" \
-      "${XDG_CONFIG_HOME:-$HOME/.config}/$(basename "$d")"
+      "${XDG_CONFIG_HOME:-$HOME/.config}"
   else
     ln -sf "$(readlink -f "$d")" ~/."$(basename "$d")"
   fi
