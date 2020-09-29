@@ -1,0 +1,145 @@
+#!/bin/bash
+
+set -euo pipefail
+
+usage() {
+  >&2 printf 'build-runtimes - build compiler and runtimes from scratch\n\n'
+  >&2 printf 'usage: %s [-C cd-dir] [-d build-dir] [-g generator] [-t build-type]\n' "$0"
+  >&2 printf '  -C: Directory to cd to before starting the build\n'
+  >&2 printf '  -d: Set the subdirectory to build in under each project (default is "build")\n'
+  >&2 printf '  -g: Set the CMake generator (default is Ninja if present, else GNU Makefiles)\n'
+  >&2 printf '  -l: Path to a pre-built LLVM (not including the build subdirectory)\n'
+  >&2 printf '  -p: Pull all projects before building (does not include -l LLVM)\n'
+  >&2 printf '  -t: Set the CMake build type (default is Release)\n'
+}
+
+CD_DIR=''
+BUILD_DIR=build
+if hash ninja; then
+    GENERATOR=Ninja
+else
+    GENERATOR='GNU Makefiles'
+fi
+PREBUILT_LLVM_DIR=''
+PULL_FIRST=0
+BUILD_TYPE=Release
+
+while getopts ':C:d:g:l:pt:' opt; do
+  case "$opt" in
+    h|\?)
+      usage
+      exit 0
+      ;;
+    C)
+      CD_DIR="$OPTARG"
+      ;;
+    d)
+      BUILD_DIR="$OPTARG"
+      ;;
+    g)
+      GENERATOR="$OPTARG"
+      ;;
+    l)
+      PREBUILT_LLVM_DIR="$OPTARG"
+      ;;
+    p)
+      PULL_FIRST=1
+      ;;
+    t)
+      BUILD_TYPE="$OPTARG"
+      ;;
+  esac
+done
+
+if [ -n "$CD_DIR" ]; then
+  cd "$CD_DIR"
+fi
+
+if [ -z "$PREBUILT_LLVM_DIR" ]; then
+  [ -d llvm-project ] || git clone -b amd-stg-open ssh://git.amd.com:29418/lightning/ec/llvm-project
+  LLVM_DIR="$(readlink -f llvm-project)"
+else
+  LLVM_DIR="$PREBUILT_LLVM_DIR"
+fi
+
+[ -d rocm-cmake ] || git clone -b amd-master ssh://git.amd.com:29418/compute/ec/packaging/rocm-cmake
+ROCM_CMAKE_DIR="$(readlink -f rocm-cmake)"
+
+[ -d device-libs ] || git clone -b amd-stg-open ssh://git.amd.com:29418/lightning/ec/device-libs
+DEVICE_LIBS_DIR="$(readlink -f device-libs)"
+
+[ -d support ] || git clone -b amd-stg-open ssh://git.amd.com:29418/lightning/ec/support
+COMGR_DIR="$(readlink -f support)/lib/comgr"
+
+[ -d opencl ] || git clone -b amd-master-next ssh://git.amd.com:29418/compute/ec/opencl
+OPENCL_DIR="$(readlink -f opencl)"
+
+[ -d vdi ] || git clone -b amd-master ssh://git.amd.com:29418/compute/ec/vdi
+VDI_DIR="$(readlink -f vdi)"
+
+[ -d hip ] || git clone  -b amd-master-next ssh://git.amd.com:29418/compute/ec/hip
+HIP_DIR="$(readlink -f hip)"
+
+CMAKE_CONFIG_OPTIONS=("-G$GENERATOR" "-DCMAKE_BUILD_TYPE=$BUILD_TYPE")
+
+if [ -z "$PREBUILT_LLVM_DIR" ]; then
+  printf '[+] Building LLVM\n'
+  mkdir -p "$LLVM_DIR/$BUILD_DIR"
+  cd "$LLVM_DIR/$BUILD_DIR"
+  ((PULL_FIRST)) && git pull
+  cmake "${CMAKE_CONFIG_OPTIONS[@]}" \
+      -DLLVM_ENABLE_PROJECTS="llvm;clang;lld" -DLLVM_ENABLE_ASSERTIONS=On \
+      -DLLVM_TARGETS_TO_BUILD="AMDGPU;X86" \
+      ../llvm
+  cmake --build . --config "$BUILD_TYPE"
+fi
+
+printf '[+] Building DeviceLibs\n'
+mkdir -p "$DEVICE_LIBS_DIR/$BUILD_DIR"
+cd "$DEVICE_LIBS_DIR/$BUILD_DIR"
+((PULL_FIRST)) && git pull
+cmake "${CMAKE_CONFIG_OPTIONS[@]}" \
+    -DLLVM_DIR="$LLVM_DIR/$BUILD_DIR" \
+    -DCMAKE_PREFIX_PATH="$LLVM_DIR/$BUILD_DIR;$ROCM_CMAKE_DIR" \
+    ..
+cmake --build . --config "$BUILD_TYPE"
+
+printf '[+] Building Comgr\n'
+mkdir -p "$COMGR_DIR/$BUILD_DIR"
+cd "$COMGR_DIR/$BUILD_DIR"
+((PULL_FIRST)) && git pull
+cmake "${CMAKE_CONFIG_OPTIONS[@]}" \
+    -DCMAKE_PREFIX_PATH="$LLVM_DIR/$BUILD_DIR;$DEVICE_LIBS_DIR/$BUILD_DIR;$ROCM_CMAKE_DIR" \
+    -DCMAKE_DISABLE_FIND_PACKAGE_hip=True \
+    ..
+cmake --build . --config "$BUILD_TYPE"
+
+printf '[+] Building VDI\n'
+mkdir -p "$VDI_DIR/$BUILD_DIR"
+cd "$VDI_DIR/$BUILD_DIR"
+((PULL_FIRST)) && git pull
+cmake "${CMAKE_CONFIG_OPTIONS[@]}" \
+    -DOPENCL_DIR="$OPENCL_DIR" -DCMAKE_PREFIX_PATH="$COMGR_DIR/$BUILD_DIR" \
+    ..
+cmake --build . --config "$BUILD_TYPE"
+
+printf '[+] Building OpenCL\n'
+mkdir -p "$OPENCL_DIR/$BUILD_DIR"
+cd "$OPENCL_DIR/$BUILD_DIR"
+((PULL_FIRST)) && git pull
+cmake "${CMAKE_CONFIG_OPTIONS[@]}" \
+    -DUSE_COMGR_LIBRARY=yes -DCMAKE_PREFIX_PATH="$COMGR_DIR/$BUILD_DIR" \
+    -DROCclr_DIR="$VDI_DIR" -DLIBROCclr_STATIC_DIR="$VDI_DIR/$BUILD_DIR" \
+    ..
+cmake --build . --config "$BUILD_TYPE"
+
+printf '[+] Building HIP\n'
+mkdir -p "$HIP_DIR/$BUILD_DIR"
+cd "$HIP_DIR/$BUILD_DIR"
+((PULL_FIRST)) && git pull
+cmake "${CMAKE_CONFIG_OPTIONS[@]}" \
+    -DCMAKE_PREFIX_PATH="$COMGR_DIR/$BUILD_DIR" -DHIP_COMPILER=clang \
+    -DHIP_PLATFORM=vdi -DROCclr_DIR="$VDI_DIR" \
+    -DLIBROCclr_STATIC_DIR="$VDI_DIR/$BUILD_DIR" \
+    ..
+cmake --build . --config "$BUILD_TYPE"
