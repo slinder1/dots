@@ -22,6 +22,10 @@ command! -nargs=1 E e <args>|bd#
 command! BB b#|bd#
 command! BD w|bd
 
+" Backup
+set nobackup
+set nowritebackup
+
 " Tabs
 set expandtab
 set tabstop=8
@@ -64,9 +68,8 @@ nnoremap <A-t> :tabe +term<CR>a
 " git
 autocmd FileType gitcommit,gitrebase set bufhidden=delete
 
-autocmd BufNewFile,BufRead *mutt-* set spell
-
 " Mutt mail
+autocmd BufNewFile,BufRead *mutt-* set spell
 augroup filetypedetect
   autocmd BufNewFile,BufRead *mutt-* setf mail
 augroup END
@@ -75,49 +78,21 @@ augroup END
 call plug#begin(stdpath('data') . '/plugged')
 Plug 'airblade/vim-gitgutter'
 Plug 'antiagainst/vim-tablegen'
-Plug 'dag/vim-fish'
 Plug 'embear/vim-localvimrc'
-Plug 'gerw/vim-latex-suite'
 Plug 'junegunn/fzf'
 Plug 'junegunn/fzf.vim'
-Plug 'mattn/emmet-vim'
-Plug 'neomake/neomake'
+Plug 'neoclide/coc.nvim', {'branch': 'release'}
 Plug 'ntpeters/vim-better-whitespace'
 Plug 'octol/vim-cpp-enhanced-highlight'
-Plug 'rhysd/vim-clang-format'
 Plug 'scott-linder/molokai'
-Plug 'scrooloose/nerdtree'
 Plug 'tpope/vim-abolish'
 Plug 'tpope/vim-fugitive'
 Plug 'tpope/vim-sensible'
 Plug 'tpope/vim-sleuth'
-Plug 'vim-airline/vim-airline'
-Plug 'vim-airline/vim-airline-themes'
-Plug 'vim-scripts/a.vim'
-Plug 'vimoutliner/vimoutliner'
 call plug#end()
 
 " Molokai
 colorscheme molokai
-
-" A
-let g:alternateExtensions_cc = "hh"
-let g:alternateExtensions_hh = "cc"
-
-" Latex-Suite
-set grepprg=grep\ -nH\ $*
-let g:tex_flavor = "latex"
-let g:tex_comment_nospell = 1
-let g:Tex_Folding = 0
-let g:Tex_CompileRule_pdf = 'pdflatex -interaction=nonstopmode $*'
-let g:Tex_FormatDependancy_pdf = 'pdf'
-let g:Tex_DefaultTargetFormat = 'pdf'
-let g:Tex_MultipleCompileFormats = 'pdf'
-let g:Tex_ViewRule_pdf = 'evince'
-
-" NERDTree
-nmap <C-n> :NERDTreeToggle<CR>
-let NERDTreeQuitOnOpen = 1
 
 "" Filetype
 
@@ -127,26 +102,6 @@ au FileType python setl nosmartindent
 " Markdown
 au BufRead,BufNewFile *.md setl filetype=markdown spell
 au FileType markdown noremap <buffer> <Leader>r :!markdown "%" > "$(basename "%" .md).html"<cr><cr>
-
-" R
-au FileType r noremap <buffer> <leader>r :!clear && R --vanilla <% \| less<cr>
-au FileType r noremap <buffer> <leader>p :!evince Rplots.pdf >/dev/null 2>&1 &<cr>
-
-" Rust
-au FileType rust setl keywordprg=uzbl-rust-std
-au FileType rust noremap <buffer> <leader>r :!clear && cargo run<cr>
-au FileType rust noremap <buffer> <leader>t :!clear && cargo test<cr>
-au FileType rust noremap <buffer> <leader>b :!clear && cargo build<cr>
-au FileType rust noremap <buffer> <leader>c :!clear && cargo clean<cr>
-
-" VimOutliner
-au FileType votl set tabstop=2
-au FileType votl set shiftwidth=2
-au FileType votl set noexpandtab
-
-" ClangFormat
-"au FileType c,cpp nnoremap <buffer><Leader>f :<C-u>ClangFormat<CR>
-au FileType c,cpp vnoremap <buffer><Leader>f :ClangFormat<CR>
 
 " FZF
 " Enable preview window in :Files
@@ -160,24 +115,31 @@ command! -bang -nargs=* Rg
 nnoremap <C-o> :Buffers<cr>
 nnoremap <C-p> :Files<cr>
 
-" NeoMake
-call neomake#configure#automake('nw')
-let g:neomake_c_enabled_makers = ['clangcheck', 'clangtidy']
-let g:neomake_cpp_enabled_makers = ['clangcheck', 'clangtidy']
-
 " localvimrc
 let g:localvimrc_persistent = 2
 
-" tabulous
-let g:tabulousLabelLeftStr = ' '
-let g:tabulousLabelRightStr = '❘'
-let g:tabulousLabelNameOptions = ':t'
-
-" vim-airline
-let g:airline_theme = 'base16_snazzy'
-let g:airline_powerline_fonts = 1
-let g:airline#extensions#tabline#enabled = 1
-let g:airline#extensions#tabline#show_tab_nr = 1
-" show tab number, not number of splits
-let g:airline#extensions#tabline#tab_nr_type = 1
-set noshowmode
+" CoC
+set updatetime=300
+set shortmess+=c
+set tagfunc=CocTagFunc
+inoremap <silent><expr> <c-space> coc#refresh()
+nmap <silent> [g <Plug>(coc-diagnostic-prev)
+nmap <silent> ]g <Plug>(coc-diagnostic-next)
+nmap <silent> gr <Plug>(coc-references)
+nmap <leader>rn <Plug>(coc-rename)
+xmap <leader>f  <Plug>(coc-format-selected)
+nmap <leader>f  <Plug>(coc-format-selected)
+augroup mygroup
+  autocmd!
+  autocmd User CocJumpPlaceholder call CocActionAsync('showSignatureHelp')
+augroup end
+nmap <leader>qf <Plug>(coc-fix-current)
+nnoremap <silent> K :call <SID>show_documentation()<CR>
+function! s:show_documentation()
+  if (index(['vim','help'], &filetype) >= 0)
+    execute 'h '.expand('<cword>')
+  else
+    call CocAction('doHover')
+  endif
+endfunction
+command! A CocCommand clangd.switchSourceHeader
