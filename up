@@ -57,10 +57,11 @@ sudo sh -c 'cat >/etc/docker/daemon.json' <<EOF
 EOF
 sudo systemctl restart docker
 
+CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
+mkdir -p "$CONFIG_HOME"
 for d in dots/*; do
   if [ -d "$d" ]; then
-    ln -sf "$(readlink -f "$d")" \
-      "${XDG_CONFIG_HOME:-$HOME/.config}"
+    ln -sf "$(readlink -f "$d")" -t "$CONFIG_HOME"
   else
     ln -sf "$(readlink -f "$d")" ~/."$(basename "$d")"
   fi
