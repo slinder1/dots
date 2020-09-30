@@ -19,20 +19,27 @@ deb() {
 xargs sudo apt-get install -qq <package-list
 
 NVIM=/usr/local/bin/nvim.appimage
-[ -f "$NVIM" ] || \
+if [ ! -f "$NVIM" ]; then
   sudo curl -sfLo "$NVIM" \
     https://github.com/neovim/neovim/releases/download/nightly/nvim.appimage
-sudo chmod a+x "$NVIM"
+  sudo chmod a+x "$NVIM"
+fi
 for alt in ex vi view vim vimdiff nvim; do
   sudo update-alternatives --install "/usr/bin/$alt" "$alt" "$NVIM" 110
 done
 
-sudo -H pip3 -q install neovim-remote cmake
+sudo -H pip3 -q install neovim-remote
 
 deb fd https://github.com/sharkdp/fd/releases/download/v7.4.0/fd-musl_7.4.0_amd64.deb
-deb rg https://github.com/BurntSushi/ripgrep/releases/download/11.0.2/ripgrep_11.0.2_amd64.deb
 deb bat https://github.com/sharkdp/bat/releases/download/v0.12.1/bat_0.12.1_amd64.deb
 deb delta https://github.com/dandavison/delta/releases/download/0.1.1/git-delta_0.1.1_amd64.deb
+
+REPO=/usr/local/bin/repo
+if [ ! -f "$REPO" ]; then
+  sudo curl -sfLo "$REPO" \
+    https://storage.googleapis.com/git-repo-downloads/repo
+  sudo chmod a+x "$REPO"
+fi
 
 if ! hash docker 2>/dev/null; then
   curl -fsSL get.docker.com | sudo sh
@@ -49,8 +56,6 @@ sudo sh -c 'cat >/etc/docker/daemon.json' <<EOF
 }
 EOF
 sudo systemctl restart docker
-
-sudo snap install node --classic --channel=10
 
 for d in dots/*; do
   if [ -d "$d" ]; then
@@ -69,12 +74,12 @@ ln -sf "$(readlink -f up)" ~/bin/up
 
 PLUG="${XDG_DATA_HOME:-$HOME/.local/share}/nvim/site/autoload/plug.vim"
 if [ ! -f "$PLUG" ]; then
-  curl -fLo "$PLUG" --create-dirs \
+  curl -sfLo "$PLUG" --create-dirs \
     https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
   nvim -es -c :PlugInstall -c :qa
 fi
 
-sudo usermod -a -G video "$USER"
+sudo usermod -a -G video,docker "$USER"
 
 # Hard to silence this without also silencing when it fails, but it prints "OK"
 # when the key is added, so just put it at the end so the "OK" also reflects
