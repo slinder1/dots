@@ -77,7 +77,6 @@ PLUG="${XDG_DATA_HOME:-$HOME/.local/share}/nvim/site/autoload/plug.vim"
 if [ ! -f "$PLUG" ]; then
   curl -sfLo "$PLUG" --create-dirs \
     https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
-  nvim -es -c :PlugInstall -c :qa
 fi
 
 sudo usermod -a -G video,docker "$USER"
