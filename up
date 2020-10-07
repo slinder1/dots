@@ -79,7 +79,7 @@ if [ ! -f "$PLUG" ]; then
     https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
 fi
 
-sudo usermod -a -G video,docker "$USER"
+sudo usermod -a -G video,render,docker "$USER"
 
 # Hard to silence this without also silencing when it fails, but it prints "OK"
 # when the key is added, so just put it at the end so the "OK" also reflects
