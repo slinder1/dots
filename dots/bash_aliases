@@ -59,7 +59,7 @@ export SVN_EDITOR=$EDITOR
 
 export BAT_THEME="Monokai Extended"
 
-[ -f /usr/local/etc/cc.env ] && . /usr/local/etc/cc.env
+[ -f ~/etc/cc.env ] && . ~/etc/cc.env
 
 alias tmux='tmux -2'
 alias less='less -R'

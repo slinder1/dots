@@ -2,7 +2,7 @@
 
 set -e
 
-REF=llvmorg-9.0.0
+REF=llvmorg-11.0.0
 
 if [[ -d llvm-project ]]; then
   pushd llvm-project
@@ -15,23 +15,23 @@ fi
 mkdir -p release
 pushd release
 cmake -GNinja -DCMAKE_BUILD_TYPE=Release \
-  -DCMAKE_INSTALL_PREFIX=/usr/local \
+  -DCMAKE_INSTALL_PREFIX="$HOME" \
   -DCMAKE_C_FLAGS=-w -DCMAKE_CXX_FLAGS=-w \
   -DLLVM_INCLUDE_TESTS=Off -DLLVM_TARGETS_TO_BUILD=X86 \
   -DLLVM_ENABLE_PROJECTS="llvm;clang;lld;clang-tools-extra;libcxx;libcxxabi;libunwind;compiler-rt" \
   -DLLVM_CCACHE_BUILD=On -DLLVM_CCACHE_MAXSIZE=256G \
   ../llvm-project/llvm
 ninja
-sudo ninja install
+ninja install
 popd
 
-C_COMPILER="/usr/local/bin/clang"
-CXX_COMPILER="/usr/local/bin/clang++"
+C_COMPILER="$HOME/bin/clang"
+CXX_COMPILER="$HOME/bin/clang++"
 
 mkdir -p libcxx-asan
 pushd libcxx-asan
 cmake -GNinja -DCMAKE_BUILD_TYPE=Release \
-  -DCMAKE_INSTALL_PREFIX=/opt/libcxx-asan \
+  -DCMAKE_INSTALL_PREFIX="$HOME" \
   -DCMAKE_C_FLAGS=-w -DCMAKE_CXX_FLAGS=-w \
   -DLLVM_INCLUDE_TESTS=Off -DLLVM_TARGETS_TO_BUILD=X86 \
   -DLLVM_ENABLE_PROJECTS="libcxx;libcxxabi" \
@@ -42,14 +42,15 @@ cmake -GNinja -DCMAKE_BUILD_TYPE=Release \
   -DLLVM_CCACHE_BUILD=On -DLLVM_CCACHE_MAXSIZE=256G \
   ../llvm-project/llvm
 ninja cxx cxxabi
-sudo ninja install
+ninja install
 popd
 
-sudo sh -c 'cat >/usr/local/etc/cc.env' <<EOF
+mkdir -p "$HOME/etc"
+sh -c "cat >"$HOME"/etc/cc.env" <<EOF
 export CC='$C_COMPILER'
 export CXX='$CXX_COMPILER'
-export LIBCXX_ASAN_C_FLAGS='-isystem /opt/libcxx-asan/include -isystem /opt/libcxx-asan/include/c++/v1'
-export LIBCXX_ASAN_CXX_FLAGS='-nostdinc++ -isystem /opt/libcxx-asan/include -isystem /opt/libcxx-asan/include/c++/v1'
-export LIBCXX_ASAN_EXE_LINKER_FLAGS='-lc++abi -Wl,--rpath=/opt/libcxx-asan/lib -L/opt/libcxx-asan/lib'
+export LIBCXX_ASAN_C_FLAGS='-isystem "$HOME"/include -isystem "$HOME"/include/c++/v1'
+export LIBCXX_ASAN_CXX_FLAGS='-nostdinc++ -isystem "$HOME"/include -isystem "$HOME"/include/c++/v1'
+export LIBCXX_ASAN_EXE_LINKER_FLAGS='-lc++abi -Wl,--rpath="$HOME"/lib -L"$HOME"/lib'
 export ASAN_OPTIONS=check_initialization_order=true:detect_stack_use_after_return=1:detect_leaks=1
 EOF
