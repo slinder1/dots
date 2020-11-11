@@ -18,7 +18,6 @@ set formatoptions+=2
 
 " Buffers
 set hidden
-command! -bang -complete=buffer -nargs=? Bd Bdelete<bang> <args>
 
 " Backup
 set nobackup
@@ -145,3 +144,7 @@ function! s:show_documentation()
   endif
 endfunction
 command! A CocCommand clangd.switchSourceHeader
+
+" bbye
+command! -bang -complete=buffer -nargs=? Bd Bdelete<bang> <args>
+nnoremap <Leader>q :Bdelete<CR>
