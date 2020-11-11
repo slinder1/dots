@@ -111,16 +111,18 @@ ldo() {
   fi
 }
 gerrit() {
+  local SAVED
+  SAVED="$(git config --local --bool --get gerrit.createChangeId)"
   if [[ $# -eq 0 ]]; then
-    if [[ $(git config --local --bool --get gerrit.createChangeId) == false ]]; then
+    if [[ "$SAVED" == false ]]; then
       git config --local --bool gerrit.createChangeId true
     else
       git config --local --bool gerrit.createChangeId false
     fi
-  elif [[ $1 == 1 || $1 == on || $1 == true ]]; then
+  else
     git config --local --bool gerrit.createChangeId true
-  elif [[ $1 == 0 || $1 == off || $1 == false ]]; then
-    git config --local --bool gerrit.createChangeId false
+    "$@"
+    git config --local --bool gerrit.createChangeId "$SAVED"
   fi
 }
 bell() {
