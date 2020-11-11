@@ -11,6 +11,7 @@ dkms
 doxygen
 dwarfdump
 expect
+fzf
 gcc-multilib
 git
 google-perftools
@@ -39,6 +40,7 @@ libxkbcommon-dev
 mutt
 ninja-build
 nodejs
+npm
 pandoc
 pkg-config
 python3
