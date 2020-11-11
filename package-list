@@ -4,6 +4,7 @@ bc
 build-essential
 ccache
 cifs-utils
+clang-format
 cmake
 curl
 devscripts
