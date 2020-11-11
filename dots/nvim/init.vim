@@ -18,9 +18,7 @@ set formatoptions+=2
 
 " Buffers
 set hidden
-command! -nargs=1 E e <args>|bd#
-command! BB b#|bd#
-command! BD w|bd
+command! -bang -complete=buffer -nargs=? Bd Bdelete<bang> <args>
 
 " Backup
 set nobackup
@@ -81,6 +79,7 @@ Plug 'antiagainst/vim-tablegen'
 Plug 'embear/vim-localvimrc'
 Plug 'junegunn/fzf'
 Plug 'junegunn/fzf.vim'
+Plug 'moll/vim-bbye'
 Plug 'neoclide/coc.nvim', {'branch': 'release'}
 Plug 'ntpeters/vim-better-whitespace'
 Plug 'octol/vim-cpp-enhanced-highlight'
