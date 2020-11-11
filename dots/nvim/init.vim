@@ -117,6 +117,8 @@ nnoremap <C-p> :Files<cr>
 let g:localvimrc_persistent = 2
 
 " CoC
+set nobackup
+set nowritebackup
 set updatetime=300
 set shortmess+=c
 set tagfunc=CocTagFunc
