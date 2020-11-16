@@ -49,8 +49,5 @@ mkdir -p "$HOME/etc"
 sh -c "cat >"$HOME"/etc/cc.env" <<EOF
 export CC='$C_COMPILER'
 export CXX='$CXX_COMPILER'
-export LIBCXX_ASAN_C_FLAGS='-isystem "$HOME"/include -isystem "$HOME"/include/c++/v1'
-export LIBCXX_ASAN_CXX_FLAGS='-nostdinc++ -isystem "$HOME"/include -isystem "$HOME"/include/c++/v1'
-export LIBCXX_ASAN_EXE_LINKER_FLAGS='-lc++abi -Wl,--rpath="$HOME"/lib -L"$HOME"/lib'
 export ASAN_OPTIONS=check_initialization_order=true:detect_stack_use_after_return=1:detect_leaks=1
 EOF

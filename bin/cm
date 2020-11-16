@@ -80,20 +80,14 @@ while getopts ':#sof:g:mdexp:b:t:' opt; do
       DRY_RUN=1
       ;;
     s)
-      if [[ -z $LIBCXX_ASAN_C_FLAGS || -z $LIBCXX_ASAN_CXX_FLAGS || -z $LIBCXX_ASAN_EXE_LINKER_FLAGS ]]; then
-        printf 'error: LIBCXX_ASAN_C_FLAGS and LIBCXX_ASAN_CXX_FLAGS and LIBCXX_ASAN_EXE_LINKER_FLAGS must be set!\n' >&2
-        exit 1
-      fi
-      ASAN_FLAGS='-fsanitize=address,undefined -fno-sanitize=vptr,function -fno-sanitize-recover=all'
-      C_FLAGS+=("$LIBCXX_ASAN_C_FLAGS $ASAN_FLAGS")
-      CXX_FLAGS+=("$LIBCXX_ASAN_CXX_FLAGS $ASAN_FLAGS")
       if is_building_llvm; then
         OPTS+=('-DLLVM_USE_SANITIZER=Address;Undefined'
+               '-DLLVM_USE_SANITIZE_COVERAGE=Yes'
                '-DLLVM_PARALLEL_LINK_JOBS=2')
+      else
+        C_FLAGS+=('-fsanitize=address,undefined')
+        CXX_FLAGS+=('-fsanitize=address,undefined')
       fi
-      OPTS+=('-DCMAKE_SHARED_LINKER_FLAGS=-stdlib=libc++'
-             '-DCMAKE_MODULE_LINKER_FLAGS=-stdlib=libc++'
-             "-DCMAKE_EXE_LINKER_FLAGS=$LIBCXX_ASAN_EXE_LINKER_FLAGS -stdlib=libc++")
       ;;
     o)
       OPTS+=('-DCLANG_ENABLE_STATIC_ANALYZER=On'
