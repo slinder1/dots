@@ -2,7 +2,7 @@
 
 usage() {
   printf 'cm - cmake wrapper for common configurations\n\n'
-  printf 'usage: %s [-#] [-s] [-o] [-f cxx-flag]... [-g c-flag]... [-m] [-d] [-e] [-x] [-p path]... [-b project]... [-t target]... [-- [cmake-args...]] <path-to-source>\n' "$0"
+  printf 'usage: %s [-#] [-s] [-o] [-f cxx-flag]... [-g c-flag]... [-m] [-d] [-e] [-x] [-p path]... [-b project]... [-t target]... [-C dir] [-- [cmake-args...]] <path-to-source>\n' "$0"
   printf '  -#: perform a dry run, only printing the CMake command line\n'
   printf '  -s: enable ASan and UBSan for LLVM\n'
   printf '  -o: enable options for building OpenCL\n'
@@ -15,6 +15,7 @@ usage() {
   printf '  -p: append to CMAKE_PREFIX_PATH (default: empty)\n'
   printf '  -b: append to LLVM_ENABLE_PROJECTS (default: llvm;clang;lld)\n'
   printf '  -t: append to LLVM_TARGETS_TO_BUILD targets to build (default: all)\n'
+  printf '  -C: change to dir before doing anything else, attempting to create it if it does not exist\n'
 }
 
 join() {
@@ -46,6 +47,7 @@ PREFIX_PATHS=()
 ENABLED_PROJECTS=()
 TARGETS_TO_BUILD=()
 DRY_RUN=0
+CHANGE_DIR=''
 
 OPTS=('-GNinja'
       '-DCMAKE_BUILD_TYPE=Release'
@@ -70,7 +72,7 @@ fi
 
 OPTIND=1
 
-while getopts ':#sof:g:mdexp:b:t:' opt; do
+while getopts ':#sof:g:mdexp:b:t:C:' opt; do
   case "$opt" in
     h|\?)
       usage
@@ -125,6 +127,9 @@ while getopts ':#sof:g:mdexp:b:t:' opt; do
     t)
       TARGETS_TO_BUILD+=("$OPTARG")
       ;;
+    C)
+      CHANGE_DIR="$OPTARG"
+      ;;
   esac
 done
 
@@ -145,6 +150,19 @@ fi
 
 shift $((OPTIND-1))
 [ "${1:-}" = '--' ] && shift
+
+if [ "$#" -lt 1 ]; then
+  usage
+  exit 1
+fi
+
+PATH_TO_SOURCE="$(realpath --relative-to="$CHANGE_DIR" "${@: -1}")"
+set -- "${@:1:(($#-1))}" "$PATH_TO_SOURCE"
+
+if [ -n "$CHANGE_DIR" ]; then
+  mkdir -p "$CHANGE_DIR"
+  cd "$CHANGE_DIR"
+fi
 
 rm -rf CMakeCache.txt CMakeFiles
 printf "cmake "
