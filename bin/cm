@@ -1,170 +1,192 @@
 #!/bin/bash
 
+#| Usage: cm [-#dehmsx] [-C dir] [-b llvm-project]...
+#|   [-o compile-option]... [-p prefix-path]... [-t llvm-target]...
+#|   [-- [cmake-args...]] <path-to-source>
+#| Wrapper for cmake(1) with saner defaults, some convenience options,
+#| and support for LLVM quirks built-in. Options with a '...' suffix
+#| can be repeated with cumulative effect.
+#|
+#|   -#    perform a dry run, only printing the generated CMake command line
+#|   -C    change to dir before doing anything else
+#|         (path-to-source is interpreted before this takes effect)
+#|   -b    append to LLVM_ENABLE_PROJECTS (if not set: llvm;clang;lld)
+#|   -d    enable Debug build (llvm: also enable optimized TableGen)
+#|   -e    enable LLVM expensive checks
+#|   -h    print this help text and exit
+#|   -m    use the Unix Makefiles generator (default: Ninja)
+#|   -o    append to C_FLAGS and CXX_FLAGS
+#|   -p    append to CMAKE_PREFIX_PATH
+#|   -s    enable ASan and UBSan
+#|   -t    append to LLVM_TARGETS_TO_BUILD (default: all)
+#|   -x    enable Sphinx docs for LLVM
+
+set -euo pipefail
+
 usage() {
-  printf 'cm - cmake wrapper for common configurations\n\n'
-  printf 'usage: %s [-#] [-s] [-o] [-f cxx-flag]... [-g c-flag]... [-m] [-d] [-e] [-x] [-p path]... [-b project]... [-t target]... [-C dir] [-- [cmake-args...]] <path-to-source>\n' "$0"
-  printf '  -#: perform a dry run, only printing the CMake command line\n'
-  printf '  -s: enable ASan and UBSan for LLVM\n'
-  printf '  -o: enable options for building OpenCL\n'
-  printf '  -f: append to CXX flags\n'
-  printf '  -g: append to C flags\n'
-  printf '  -m: use GNU Makefiles instead of Ninja\n'
-  printf '  -d: enable Debug build and limit link jobs to 2\n'
-  printf '  -e: enable LLVM expensive checks\n'
-  printf '  -x: enable Sphinx docs for LLVM\n'
-  printf '  -p: append to CMAKE_PREFIX_PATH (default: empty)\n'
-  printf '  -b: append to LLVM_ENABLE_PROJECTS (default: llvm;clang;lld)\n'
-  printf '  -t: append to LLVM_TARGETS_TO_BUILD targets to build (default: all)\n'
-  printf '  -C: change to dir before doing anything else, attempting to create it if it does not exist\n'
+  sed -n 's/^#| \(.*\)$/\1/p' "$0"
+}
+
+usage_then_exit() {
+  local -r STATUS="$1"; shift
+  usage >&$(( STATUS ? 2 : 1 ))
+  exit "$STATUS"
+}
+
+dief() {
+  local -r STATUS="$1"; shift
+  local -r FMT="$1"; shift
+  printf "%s: error: $FMT" "$0" "$@" >&2
+  exit "$STATUS"
 }
 
 join() {
-  local IFS="$1"; shift
+  local -r IFS="$1"; shift
   printf '%s' "$*"
 }
 
 is_clang() {
-  local CC="$CC"
-  [[ -n $CC ]] || CC='cc'
-  local CXX="$CXX"
-  [[ -n $CXX ]] || CXX='c++'
-  # FIXME: this may be imprecise, but it seems to work
-  eval "$CC --version" | grep -qi 'clang' &&
-    eval "$CXX --version" | grep -qi 'clang'
+  eval "${CC:-cc} --version" | grep -qi 'clang' \
+    && eval "${CXX:-c++} --version" | grep -qi 'clang'
 }
 
 is_building_llvm() {
-  pwd | grep -q llvm-project
+  local -r PATH_TO_SOURCE="$1"; shift
+  [[ -e $PATH_TO_SOURCE && $(realpath -e "$PATH_TO_SOURCE") == *llvm-project* ]]
 }
 
 has_command() {
-  command -v "$1" >/dev/null
+  local -r COMMAND="$1"; shift
+  command -v "$COMMAND" >/dev/null
 }
 
-C_FLAGS=()
-CXX_FLAGS=()
-PREFIX_PATHS=()
-ENABLED_PROJECTS=()
-TARGETS_TO_BUILD=()
-DRY_RUN=0
-CHANGE_DIR=''
+OPT_DRY_RUN=0
+OPT_SANITIZE=0
+OPT_DEBUG=0
+OPT_MAKEFILES=0
+OPT_COMPILE_OPTIONS=()
+OPT_CMAKE_FLAGS=()
+OPT_PREFIX_PATH=()
+OPT_ENABLE_PROJECTS=()
+OPT_TARGETS_TO_BUILD=()
+OPT_CHANGE_DIR=''
 
-OPTS=('-GNinja'
-      '-DCMAKE_BUILD_TYPE=Release'
-      '-DCMAKE_INSTALL_PREFIX=dist'
-      '-DCMAKE_EXPORT_COMPILE_COMMANDS=On')
-
-if is_building_llvm; then
-  OPTS+=('-DLLVM_ENABLE_ASSERTIONS=On' '-DLLVM_ENABLE_SPHINX=On')
-  if has_command ccache; then
-    OPTS+=('-DLLVM_CCACHE_BUILD=On')
-  fi
-fi
-
-if is_clang; then
-  C_FLAGS+=('-fcolor-diagnostics')
-  CXX_FLAGS+=('-fcolor-diagnostics')
-  if is_building_llvm; then
-    OPTS+=('-DLLVM_USE_LINKER=lld')
-  fi
-fi
-
-OPTIND=1
-
-while getopts ':#sof:g:mdexp:b:t:C:' opt; do
+while getopts '#C:b:dehmo:p:st:x' opt; do
   case "$opt" in
-    h|\?)
-      usage
-      exit 0
-      ;;
-    '#')
-      DRY_RUN=1
-      ;;
-    s)
-      if is_building_llvm; then
-        OPTS+=('-DLLVM_USE_SANITIZER=Address;Undefined'
-               '-DLLVM_USE_SANITIZE_COVERAGE=Yes'
-               '-DLLVM_PARALLEL_LINK_JOBS=2')
-      else
-        C_FLAGS+=('-fsanitize=address,undefined')
-        CXX_FLAGS+=('-fsanitize=address,undefined')
-      fi
-      ;;
-    o)
-      OPTS+=('-DCLANG_ENABLE_STATIC_ANALYZER=On'
-             '-DLLVM_TARGETS_TO_BUILD=AMDGPU;X86' '-DLLVM_BUILD_TOOLS=On'
-             '-DLLVM_INCLUDE_TESTS=On')
-      ;;
-    f)
-      CXX_FLAGS+=("$OPTARG")
-      ;;
-    g)
-      C_FLAGS+=("$OPTARG")
-      ;;
-    m)
-      OPTS+=('-GUnix Makefiles')
-      ;;
-    d)
-      OPTS+=('-DCMAKE_BUILD_TYPE=Debug')
-      if is_building_llvm; then
-        OPTS+=('-DLLVM_PARALLEL_LINK_JOBS=2' '-DLLVM_OPTIMIZED_TABLEGEN=On')
-      fi
-      ;;
-    e)
-      OPTS+=('-DLLVM_ENABLE_EXPENSIVE_CHECKS=On' '-DLLVM_ENABLE_WERROR=Off'
-             '-DLLVM_OPTIMIZED_TABLEGEN=On')
-      ;;
-    x)
-      OPTS+=('-DLLVM_BUILD_DOCS=On' '-DLLVM_ENABLE_SPHINX=On')
-      ;;
-    p)
-      PREFIX_PATHS+=("$OPTARG")
-      ;;
-    b)
-      ENABLED_PROJECTS+=("$OPTARG")
-      ;;
-    t)
-      TARGETS_TO_BUILD+=("$OPTARG")
-      ;;
-    C)
-      CHANGE_DIR="$OPTARG"
-      ;;
+    '?') usage_then_exit 1 ;;
+    '#') OPT_DRY_RUN=1 ;;
+    C) OPT_CHANGE_DIR="$OPTARG" ;;
+    b) OPT_ENABLE_PROJECTS+=("$OPTARG") ;;
+    d) OPT_DEBUG=1 ;;
+    e) OPT_CMAKE_FLAGS+=('-DLLVM_ENABLE_EXPENSIVE_CHECKS=On' '-DLLVM_ENABLE_WERROR=Off' '-DLLVM_OPTIMIZED_TABLEGEN=On') ;;
+    h) usage_then_exit 0 ;;
+    m) OPT_MAKEFILES=1 ;;
+    o) OPT_COMPILE_OPTIONS+=("$OPTARG") ;;
+    p) OPT_PREFIX_PATH+=("$OPTARG") ;;
+    s) OPT_SANITIZE=1 ;;
+    t) OPT_TARGETS_TO_BUILD+=("$OPTARG") ;;
+    x) OPT_CMAKE_FLAGS+=('-DLLVM_BUILD_DOCS=On' '-DLLVM_ENABLE_SPHINX=On') ;;
   esac
 done
+readonly OPT_DRY_RUN OPT_COMPILE_OPTIONS OPT_CMAKE_FLAGS OPT_PREFIX_PATH \
+  OPT_ENABLE_PROJECTS OPT_TARGETS_TO_BUILD OPT_CHANGE_DIR
 
-# FIXME: C and CXX flags with spaces still aren't handled right
-OPTS+=("-DCMAKE_C_FLAGS=$(join ' ' "${C_FLAGS[@]}")")
-OPTS+=("-DCMAKE_CXX_FLAGS=$(join ' ' "${CXX_FLAGS[@]}")")
-OPTS+=("-DCMAKE_PREFIX_PATH=$(join ';' "${PREFIX_PATHS[@]}")")
-if [ ${#ENABLED_PROJECTS[@]} -ne 0 ]; then
-  OPTS+=("-DLLVM_ENABLE_PROJECTS=$(join ';' "${ENABLED_PROJECTS[@]}")")
-elif is_building_llvm; then
-  OPTS+=("-DLLVM_ENABLE_PROJECTS=llvm;clang;lld")
+shift $(( OPTIND - 1 ))
+[[ ${1:-} == '--' ]] && shift
+
+# All valid command lines have at least path-to-source, and this also makes the
+# command with no arguments at all a pseudo-alias for `-h`.
+(( $# )) || usage_then_exit 1
+
+path_to_source="${*: -1}"
+
+# Set up some default options
+opts=('-DCMAKE_INSTALL_PREFIX=dist'
+      '-DCMAKE_EXPORT_COMPILE_COMMANDS=On')
+
+if is_building_llvm "$path_to_source"; then
+  opts+=('-DLLVM_ENABLE_ASSERTIONS=On' '-DLLVM_ENABLE_SPHINX=On')
+  if has_command lld; then
+    opts+=('-DLLVM_USE_LINKER=lld')
+  elif has_command gold; then
+    opts+=('-DLLVM_USE_LINKER=gold')
+  fi
 fi
-if [ ${#TARGETS_TO_BUILD[@]} -ne 0 ]; then
-  OPTS+=("-DLLVM_TARGETS_TO_BUILD=$(join ';' "${TARGETS_TO_BUILD[@]}")")
-elif is_building_llvm; then
-  OPTS+=("-DLLVM_TARGETS_TO_BUILD=all")
+
+if has_command ccache; then
+  if is_building_llvm "$path_to_source"; then
+    opts+=('-DLLVM_CCACHE_BUILD=On')
+  else
+    opts+=('-DCMAKE_C_COMPILER_LAUNCHER=ccache')
+    opts+=('-DCMAKE_CXX_COMPILER_LAUNCHER=ccache')
+  fi
 fi
 
-shift $((OPTIND-1))
-[ "${1:-}" = '--' ] && shift
+compile_options=()
+is_clang && compile_options+=('-fcolor-diagnostics')
 
-if [ "$#" -lt 1 ]; then
-  usage
-  exit 1
+# And then process all of the user options
+if (( OPT_SANITIZE )); then
+  if is_building_llvm "$path_to_source"; then
+    opts+=('-DLLVM_USE_SANITIZER=Address;Undefined' '-DLLVM_USE_SANITIZE_COVERAGE=Yes')
+  else
+    compile_options+=('-fsanitize=address,undefined')
+  fi
 fi
 
-PATH_TO_SOURCE="$(realpath --relative-to="$CHANGE_DIR" "${@: -1}")"
-set -- "${@:1:(($#-1))}" "$PATH_TO_SOURCE"
-
-if [ -n "$CHANGE_DIR" ]; then
-  mkdir -p "$CHANGE_DIR"
-  cd "$CHANGE_DIR"
+if (( OPT_DEBUG )); then
+  opts+=('-DCMAKE_BUILD_TYPE=Debug')
+  is_building_llvm "$path_to_source" && opts+=('-DLLVM_OPTIMIZED_TABLEGEN=On')
+else
+  opts+=('-DCMAKE_BUILD_TYPE=Release')
 fi
+
+if (( OPT_MAKEFILES )) || ! has_command ninja; then
+  opts+=('-GUnix Makefiles')
+else
+  opts+=('-GNinja')
+fi
+
+for opt in "${OPT_CMAKE_FLAGS[@]}"; do
+  opts+=("$opt")
+done
+
+for compile_option in "${OPT_COMPILE_OPTIONS[@]}"; do
+  compile_options+=("$compile_option")
+done
+opts+=("-DCMAKE_C_FLAGS=$(printf '"%s" ' "${compile_options[@]}")")
+opts+=("-DCMAKE_CXX_FLAGS=$(printf '"%s" ' "${compile_options[@]}")")
+
+opts+=("-DCMAKE_PREFIX_PATH=$(join ';' "${OPT_PREFIX_PATH[@]}")")
+
+if (( ${#OPT_ENABLE_PROJECTS[@]} )); then
+  opts+=("-DLLVM_ENABLE_PROJECTS=$(join ';' "${OPT_ENABLE_PROJECTS[@]}")")
+elif is_building_llvm "$path_to_source"; then
+  opts+=("-DLLVM_ENABLE_PROJECTS=llvm;clang;lld")
+fi
+
+if (( ${#OPT_TARGETS_TO_BUILD[@]} )); then
+  opts+=("-DLLVM_TARGETS_TO_BUILD=$(join ';' "${OPT_TARGETS_TO_BUILD[@]}")")
+elif is_building_llvm "$path_to_source"; then
+  opts+=("-DLLVM_TARGETS_TO_BUILD=all")
+fi
+
+if [[ -n $OPT_CHANGE_DIR ]]; then
+  [[ -d $OPT_CHANGE_DIR ]] || dief 1 '"%s" is not a directory.\n' "$OPT_CHANGE_DIR"
+  # Avoid changing a relative path to an absolute one
+  if [[ -d $path_to_source && $path_to_source != /* ]]; then
+    path_to_source="$(realpath --relative-to="$OPT_CHANGE_DIR" "$path_to_source")"
+    set -- "${@:1:(($#-1))}" "$path_to_source"
+  fi
+  cd "$OPT_CHANGE_DIR"
+fi
+
+printf "cmake "
+printf "'%s' " "${opts[@]}" "$@"
+printf "\n"
+
+(( OPT_DRY_RUN )) && exit 0
 
 rm -rf CMakeCache.txt CMakeFiles
-printf "cmake "
-printf "'%s' " "${OPTS[@]}" "$@"
-printf "\n"
-[ "$DRY_RUN" -eq 1 ] || cmake "${OPTS[@]}" "$@"
+
+cmake "${opts[@]}" "$@"
