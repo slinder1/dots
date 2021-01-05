@@ -24,7 +24,7 @@
 set -euo pipefail
 
 usage() {
-  sed -n 's/^#| \(.*\)$/\1/p' "$0"
+  sed -n 's/^#| \?\(.*\)$/\1/p' "$0"
 }
 
 usage_then_exit() {
