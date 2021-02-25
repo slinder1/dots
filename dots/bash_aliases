@@ -23,7 +23,7 @@ HISTIGNORE='ls:l:ll:cd:pwd:bg:fg:history'
 # Fuss about with the history file: read-append, write-dedup, clear, read
 PROMPT_COMMAND="history -n; history -w; history -c; history -r; $PROMPT_COMMAND"
 
-fixssh() {
+tmux-refresh-ssh-env() {
   eval "$(tmux show-env -s | grep '^SSH_')"
 }
 SSH_ENV=~/.ssh/env
@@ -34,11 +34,19 @@ start_agent() {
   . "$SSH_ENV"
   ssh-add
 }
-if [ -f "$SSH_ENV" ]; then
-  . "$SSH_ENV"
-  ps "$SSH_AGENT_PID" | grep -q ssh-agent || start_agent
+
+if [ -f ~/.ssh/id_rsa ]; then
+  if [ -f "$SSH_ENV" ]; then
+    . "$SSH_ENV"
+    ps "$SSH_AGENT_PID" | grep -q ssh-agent || start_agent
+  else
+    start_agent
+  fi
 else
-  start_agent
+  if [[ -S "$SSH_AUTH_SOCK" && ! -L "$SSH_AUTH_SOCK" ]]; then
+    ln -sf "$SSH_AUTH_SOCK" ~/.ssh/ssh_auth_sock
+  fi
+  export SSH_AUTH_SOCK=~/.ssh/ssh_auth_sock
 fi
 
 GIT_PS1_SHOWCOLORHINTS=1
@@ -47,7 +55,7 @@ extra_git_ps1() {
   local GIT_DIR
   GIT_DIR=$(git rev-parse --git-dir 2>/dev/null)
   if [[ -n $GIT_DIR && -x $GIT_DIR/hooks/commit-msg &&
-	$(git config --local --bool --get gerrit.createChangeId) != false ]]; then
+      $(git config --local --bool --get gerrit.createChangeId) != false ]]; then
     printf "$FORMAT" "g"
   fi
 }
@@ -58,8 +66,6 @@ export GIT_EDITOR=$EDITOR
 export SVN_EDITOR=$EDITOR
 
 export BAT_THEME="Monokai Extended"
-
-[ -f ~/etc/cc.env ] && . ~/etc/cc.env
 
 alias tmux='tmux -2'
 alias less='less -R'
@@ -87,7 +93,7 @@ alias vp='nvr -l'
 f() {
   fd "$@"
 }
-c() {
+b() {
   bat "$@"
 }
 g() {
@@ -95,20 +101,10 @@ g() {
 }
 if [ -f /usr/share/bash-completion/completions/git ]; then
   . /usr/share/bash-completion/completions/git
-  __git_complete g _git
+  __git_complete g __git_main
 fi
-ldo() {
-  "$@"
-  if [ -d tools/clang ]; then
-    cd tools/clang
-    "$@"
-    cd ../..
-  fi
-  if [ -d tools/lld ]; then
-    cd tools/lld
-    "$@"
-    cd ../..
-  fi
+bell() {
+  echo -e '\a'
 }
 gerrit() {
   local SAVED
@@ -125,8 +121,8 @@ gerrit() {
     git config --local --bool gerrit.createChangeId "$SAVED"
   fi
 }
-bell() {
-  echo -e '\a'
+gerrit-msg() {
+  python3 -c 'import sys; from urllib.parse import quote_plus; print(quote_plus(sys.stdin.readline().strip()))'
 }
 
 # Phabricator/arc try to be too clever, which would be nice if they failed
@@ -164,3 +160,30 @@ alias drun='sudo docker run -it --network=host --device=/dev/kfd --device=/dev/d
 windows() {
   sudo grub-reboot "$(grep -i windows /boot/grub/grub.cfg | cut -d\' -f2 | head -1)" && sudo reboot
 }
+
+c() {
+  local SOURCE=''
+  [[ $# -gt 0 ]] && { SOURCE="$1"; shift; }
+  PREAMBLE="#include <stdint.h>\n"
+  for bits in 8 16 32 64; do
+    PREAMBLE+="typedef int${bits}_t i${bits};\n"
+    PREAMBLE+="typedef uint${bits}_t u${bits};\n"
+  done
+  printf "${PREAMBLE}\n%s" "$SOURCE" | clang -x c - -S -o - --target=aarch64-unknown-linux "$@" 2>&1
+}
+
+ocl() {
+  local SOURCE=''
+  [[ $# -gt 0 ]] && { SOURCE="$1"; shift; }
+  printf '%s' "$SOURCE" | clang -x cl -Xclang -finclude-default-header - -O0 -S -o - --target=amdgcn-amd-amdhsa -mcpu=gfx900 "$@" 2>&1 | sed -e '/^!opencl.ocl.version/d' -e '/^!llvm.ident/d'
+}
+
+hip() {
+  local SOURCE=''
+  [[ $# -gt 0 ]] && { SOURCE="$1"; shift; }
+  printf '%s' "$SOURCE" | clang -x hip --cuda-device-only - -O0 -S -o - --cuda-gpu-arch=gfx900 "$@" 2>&1 | sed '/\t\.ident/d'
+}
+
+[ -d ~/lib ] && export LD_PRELOAD_PATH=~/lib
+[ -d ~/code/llvm-project/release/bin ] && export PATH=~/code/llvm-project/release/bin:"$PATH"
+[ -f ~/etc/cc.env ] && . ~/etc/cc.env
