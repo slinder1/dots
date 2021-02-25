@@ -30,8 +30,7 @@ set shiftwidth=4
 
 " Numbers
 set number
-set relativenumber
-au TermOpen * setlocal nonumber relativenumber
+au TermOpen * setlocal nonumber
 
 " Search
 set incsearch
@@ -87,6 +86,7 @@ Plug 'tpope/vim-abolish'
 Plug 'tpope/vim-fugitive'
 Plug 'tpope/vim-sensible'
 Plug 'tpope/vim-sleuth'
+Plug 'easymotion/vim-easymotion'
 call plug#end()
 
 " Molokai
@@ -146,7 +146,18 @@ function! s:show_documentation()
   endif
 endfunction
 command! A CocCommand clangd.switchSourceHeader
+command! CN CocNext
+command! CP CocPrev
+command! CL CocListResume
 
 " bbye
 command! -bang -complete=buffer -nargs=? Bd Bdelete<bang> <args>
 nnoremap <Leader>q :Bdelete<CR>
+
+" easymotion
+let g:EasyMotion_do_mapping = 0
+let g:EasyMotion_startofline = 0
+let g:EasyMotion_smartcase = 1
+nmap s <Plug>(easymotion-overwin-f2)
+map <Leader>j <Plug>(easymotion-j)
+map <Leader>k <Plug>(easymotion-k)
