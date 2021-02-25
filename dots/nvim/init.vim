@@ -76,12 +76,12 @@ call plug#begin(stdpath('data') . '/plugged')
 Plug 'airblade/vim-gitgutter'
 Plug 'antiagainst/vim-tablegen'
 Plug 'embear/vim-localvimrc'
+Plug 'jackguo380/vim-lsp-cxx-highlight'
 Plug 'junegunn/fzf'
 Plug 'junegunn/fzf.vim'
 Plug 'moll/vim-bbye'
 Plug 'neoclide/coc.nvim', {'branch': 'release'}
 Plug 'ntpeters/vim-better-whitespace'
-Plug 'octol/vim-cpp-enhanced-highlight'
 Plug 'scott-linder/molokai'
 Plug 'tpope/vim-abolish'
 Plug 'tpope/vim-fugitive'
