@@ -13,31 +13,46 @@
 [pull]
     ff = only
 [alias]
-    # [s][t]atus
-    st = status
-    # [d]i[f]f
-    df = diff
-    # [s]et hea[d]
-    sd = switch
-    # [r]e[s]et
-    rs = reset
-    # [c]heck[o]ut
-    co = restore
-    # [s][h]ow
-    sh = show
-    # [r][e]base
-    re = rebase
-    # Shortcut for rebasing branches following the convention <user>/<base>/<feature>
-    # [r]ebase [a]utomatically
+    ## [s]et...
+    # [H]EAD
+    sh = switch
+    # HEAD [r]ef's head
+    sr = reset
+    # [f]ile contents
+    sf = restore
+
+    ## [v]iew...
+    # [s]tatus
+    vs = status
+    # [d]iff
+    vd = diff
+    # [o]bject
+    vo = show
+    # [l]og
+    vl = log --decorate --oneline
+    # [l]og [v]erbose
+    vlv = log --decorate
+    # [l]og [g]raph
+    vlg = log --decorate --oneline --graph --all
+
+    ## [r]ebase...
+    #
+    r = rebase
+    # [o]nto
+    ro = rebase --onto
+    # [r]ebase [a]utomatically based on HEAD ref following the convention <user>/<base>/<feature>
     ra = "!f() { branch=$(git rev-parse --abbrev-ref HEAD); git rebase \"$@\" \"$(printf '%s' \"$branch\" | sed 's#.*/\\(.*\\)/.*#\\1#')\" \"$branch\"; }; f"
-    # [c]o[m]mit
-    cm = commit -vv
-    # [c]ommit [a]mend
+
+    ## [c]ommit...
+    #
+    c = commit -vv
+    # [a]mend
     ca = commit -vv --amend
-    # [c]ommit e[v]erything
-    cv = "!f() { git add -A :/ && git commit -vv; }; f"
-    # [c]herry [p]ick
+    # [e]verything
+    ce = "!f() { git add -A :/ && git commit -vv; }; f"
+    # cherry [p]ick
     cp = cherry-pick
+
     # What patches are in a merge?
     show-merge = "!f() { git show --stat \"$1^..$1\"; }; f"
     # What merge brings in a specific commit?
