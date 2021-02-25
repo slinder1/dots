@@ -1,0 +1,39 @@
+#!/bin/bash
+
+set -euo pipefail
+
+cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"
+
+NVIM="$HOME/bin/nvim.appimage"
+if [ ! -f "$NVIM" ]; then
+  curl -sfLo "$NVIM" \
+    https://github.com/neovim/neovim/releases/download/nightly/nvim.appimage
+  chmod a+x "$NVIM"
+fi
+for alt in ex vi view vim vimdiff nvim; do
+  ln -sf "$NVIM" "$HOME/bin/$alt"
+done
+
+pip3 -q install --user neovim-remote cmake
+
+CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
+mkdir -p "$CONFIG_HOME"
+for d in dots/*; do
+  if [ -d "$d" ]; then
+    ln -sf "$(readlink -f "$d")" -t "$CONFIG_HOME"
+  else
+    ln -sf "$(readlink -f "$d")" ~/."$(basename "$d")"
+  fi
+done
+
+mkdir -p ~/bin
+for b in bin/*; do
+  ln -sf "$(readlink -f "$b")" ~/bin/"$(basename "$b")"
+done
+ln -sf "$(readlink -f up)" ~/bin/up
+
+PLUG="${XDG_DATA_HOME:-$HOME/.local/share}/nvim/site/autoload/plug.vim"
+if [ ! -f "$PLUG" ]; then
+  curl -sfLo "$PLUG" --create-dirs \
+    https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
+fi
