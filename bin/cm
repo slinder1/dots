@@ -19,7 +19,7 @@
 #|   -p    append to CMAKE_PREFIX_PATH
 #|   -s    enable ASan and UBSan
 #|   -t    append to LLVM_TARGETS_TO_BUILD (default: all)
-#|   -x    enable Sphinx docs for LLVM
+#|   -x    enable LLVM_BUILD_DOCS
 
 set -euo pipefail
 
@@ -85,7 +85,7 @@ while getopts '#C:b:dehmo:p:st:x' opt; do
     p) OPT_PREFIX_PATH+=("$OPTARG") ;;
     s) OPT_SANITIZE=1 ;;
     t) OPT_TARGETS_TO_BUILD+=("$OPTARG") ;;
-    x) OPT_CMAKE_FLAGS+=('-DLLVM_BUILD_DOCS=On' '-DLLVM_ENABLE_SPHINX=On') ;;
+    x) OPT_CMAKE_FLAGS+=('-DLLVM_BUILD_DOCS=On') ;;
   esac
 done
 readonly OPT_DRY_RUN OPT_COMPILE_OPTIONS OPT_CMAKE_FLAGS OPT_PREFIX_PATH \
@@ -105,7 +105,8 @@ opts=('-DCMAKE_INSTALL_PREFIX=dist'
       '-DCMAKE_EXPORT_COMPILE_COMMANDS=On')
 
 if is_building_llvm "$path_to_source"; then
-  opts+=('-DLLVM_ENABLE_ASSERTIONS=On' '-DLLVM_ENABLE_SPHINX=On')
+  opts+=('-DLLVM_ENABLE_ASSERTIONS=On')
+  has_command sphinx-build && opts+=('-DLLVM_ENABLE_SPHINX=On')
   if has_command lld; then
     opts+=('-DLLVM_USE_LINKER=lld')
   elif has_command gold; then
