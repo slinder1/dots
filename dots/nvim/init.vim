@@ -70,6 +70,10 @@ augroup filetypedetect
   autocmd BufNewFile,BufRead *mutt-* setf mail
 augroup END
 
+" jumplist
+nnoremap <C-n> <C-o>
+nnoremap <C-m> <C-i>
+
 "" Plugins
 call plug#begin(stdpath('data') . '/plugged')
 Plug 'airblade/vim-gitgutter'
@@ -78,6 +82,7 @@ Plug 'embear/vim-localvimrc'
 Plug 'jackguo380/vim-lsp-cxx-highlight'
 Plug 'junegunn/fzf'
 Plug 'junegunn/fzf.vim'
+Plug 'justinmk/vim-sneak'
 Plug 'moll/vim-bbye'
 Plug 'neoclide/coc.nvim', {'branch': 'release'}
 Plug 'ntpeters/vim-better-whitespace'
@@ -86,7 +91,6 @@ Plug 'tpope/vim-abolish'
 Plug 'tpope/vim-fugitive'
 Plug 'tpope/vim-sensible'
 Plug 'tpope/vim-sleuth'
-Plug 'easymotion/vim-easymotion'
 call plug#end()
 
 " Molokai
@@ -154,10 +158,5 @@ command! CL CocListResume
 command! -bang -complete=buffer -nargs=? Bd Bdelete<bang> <args>
 nnoremap <Leader>q :Bdelete<CR>
 
-" easymotion
-let g:EasyMotion_do_mapping = 0
-let g:EasyMotion_startofline = 0
-let g:EasyMotion_smartcase = 1
-nmap s <Plug>(easymotion-overwin-f2)
-map <Leader>j <Plug>(easymotion-j)
-map <Leader>k <Plug>(easymotion-k)
+" sneak
+let g:sneak#label = 1
