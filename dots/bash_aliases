@@ -90,15 +90,10 @@ alias vsp='nvr -O'
 alias tabe='nvr -p'
 alias vd='nvr -d'
 alias vp='nvr -l'
-f() {
-  fd "$@"
-}
-b() {
-  bat "$@"
-}
-g() {
-  git "$@"
-}
+alias f=fd
+alias b=bat
+alias n=ninja
+alias g=git
 if [ -f /usr/share/bash-completion/completions/git ]; then
   . /usr/share/bash-completion/completions/git
   __git_complete g __git_main
@@ -145,7 +140,7 @@ phab-msg() {
   local REV_ID
   REV_ID=$(printf "%s" "$1" | sed 's/^D\([0-9]\+\)$/\1/')
   printf '{ "revision_id": "%s" }' "$REV_ID" \
-    | arc call-conduit differential.getcommitmessage \
+    | arc call-conduit differential.getcommitmessage -- \
     | jq -r '.["response"]'
 }
 phab-pull() {
@@ -185,5 +180,6 @@ hip() {
 }
 
 [ -d ~/lib ] && export LD_PRELOAD_PATH=~/lib
-[ -d ~/code/llvm-project/release/bin ] && export PATH=~/code/llvm-project/release/bin:"$PATH"
+[ -d ~/llvm-project/main/release/bin ] && export PATH=~/llvm-project/main/release/bin:"$PATH"
+[ -d ~/vendor/arcanist/bin ] && export PATH=~/vendor/arcanist/bin:"$PATH"
 [ -f ~/etc/cc.env ] && . ~/etc/cc.env
