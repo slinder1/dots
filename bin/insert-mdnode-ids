@@ -1,0 +1,19 @@
+#!/usr/bin/perl
+use strict;
+use warnings;
+
+# Make room in LLVM IR for new MDNode IDs by incrementing references to MDNode
+# IDs in stdin, writing the result to stdout. The list of new MDNode IDs is
+# read from argv, one ID per argument.
+#
+# Note: Just uses a regex which matches on an exclamation point followed by a
+# sequence of digits. This may be incorrect in some cases, so always make sure
+# the result looks how you intend.
+
+while (<STDIN>) {
+    foreach my $id (@ARGV) {
+        print "!$id = \n" if /^!$id = /;
+        s/!(\d+)/if ($1 < $id) {"!" . $1} else {"!" . ($1 + 1)}/eg;
+    }
+    print;
+}
