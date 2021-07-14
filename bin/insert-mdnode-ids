@@ -10,8 +10,10 @@ use warnings;
 # sequence of digits. This may be incorrect in some cases, so always make sure
 # the result looks how you intend.
 
+my @ids = sort grep /^\d+$/, @ARGV;
+
 while (<STDIN>) {
-    foreach my $id (@ARGV) {
+    foreach my $id (@ids) {
         print "!$id = \n" if /^!$id = /;
         s/!(\d+)/if ($1 < $id) {"!" . $1} else {"!" . ($1 + 1)}/eg;
     }
