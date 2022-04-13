@@ -25,9 +25,9 @@
     # [s]tatus
     vs = status
     # [d]iff
-    vd = diff
+    vd = diff --no-prefix
     # [o]bject
-    vo = show
+    vo = show --no-prefix
     # [l]og
     vl = log --decorate --oneline
     # [l]og [v]erbose
@@ -41,7 +41,9 @@
     # [o]nto
     ro = rebase --onto
     # [r]ebase [a]utomatically based on HEAD ref following the convention <user>/<base>/<feature>
-    ra = "!f() { branch=$(git rev-parse --abbrev-ref HEAD); git rebase \"$@\" \"$(printf '%s' \"$branch\" | sed 's#.*/\\(.*\\)/.*#\\1#')\" \"$branch\"; }; f"
+    ra = "!f() { branch=$(git rev-parse --abbrev-ref HEAD); base=\"$(printf '%s' \"$branch\" | sed 's#.*/\\(.*\\)/.*#\\1#')\"; git rebase \"$@\" \"$base\" \"$branch\"; }; f"
+    # [p]ull base, then [r]ebase [a]utomatically based on HEAD ref following the convention <user>/<base>/<feature>
+    pra = "!f() { branch=$(git rev-parse --abbrev-ref HEAD); base=\"$(printf '%s' \"$branch\" | sed 's#.*/\\(.*\\)/.*#\\1#')\"; git checkout \"$base\"; git pull; git rebase \"$@\" \"$base\" \"$branch\"; }; f"
 
     ## [c]ommit...
     #
@@ -59,3 +61,8 @@
     find-merge = "!sh -c 'commit=$0 && branch=${1:-HEAD} && (git rev-list $commit..$branch --ancestry-path | cat -n; git rev-list $commit..$branch --first-parent | cat -n) | sort -k2 -s | uniq -f1 -d | sort -n | tail -1 | cut -f2'"
     # Shortcut for deleting current branch and checking out the previous HEAD (git-branch doesn't support the `-` notation for `@{-1}`)
     done = "!f() { git checkout - && git branch -D @{-1}; }; f"
+
+    # Push based on HEAD ref following the convention <user>/<base>/<feature>
+    push-amd = "!f() { branch=$(git rev-parse --abbrev-ref HEAD); base=\"$(printf '%s' \"$branch\" | sed 's#.*/\\(.*\\)/.*#\\1#')\"; git push \"$@\" amd HEAD:refs/for/\"$base\"; }; f"
+    # Push a debug info change
+    push-dbg = push amd HEAD:refs/for/amd-stg-open%topic=SWDEV-171521,r=ttye,r=kzhuravl,r=vnalamot

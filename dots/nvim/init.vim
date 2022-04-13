@@ -114,6 +114,41 @@ command! -bang -nargs=* Rg
   \ call fzf#vim#grep(
   \   'rg --column --line-number --no-heading --color=always --smart-case '.shellescape(<q-args>), 1,
   \   fzf#vim#with_preview(), <bang>0)
+" Function to paste buffer names while in insert/terminal mode
+function! s:bufput(line)
+  call feedkeys('i' . split(a:line, '\t')[3])
+endfunction
+function! BuffersPut()
+  call fzf#run(fzf#wrap({
+    \ 'source': map(fzf#vim#_buflisted_sorted(), 'fzf#vim#_format_buffer(v:val)'),
+    \ 'sink': function('s:bufput'),
+    \ 'options': ['+m', '-x', '--tiebreak=index', '--header-lines=1', '--ansi',
+                 \'-d', '\t', '--with-nth', '3..', '-n', '2,1..2', '--prompt',
+                 \'PasteBuf> ', '--query', '', '--preview-window', '+{2}-/2',
+                 \'--tabstop', 8]
+    \}))
+endfunction
+" Enable preview window in :GitFiles?
+function! s:gfilesput(line)
+  call feedkeys('i' . split(a:line, ' ')[1])
+endfunction
+function! GFilesPut()
+  let root = split(system('git rev-parse --show-toplevel'), '\n')[0]
+  if v:shell_error
+    return
+  endif
+  call fzf#run(fzf#wrap({
+    \ 'source':  'git -c color.status=always status --short --untracked-files=all',
+    \ 'sink': function('s:gfilesput'),
+    \ 'dir': root,
+    \ 'options': ['--ansi', '--nth', '2..,..', '--tiebreak=index', '--prompt', 'GitFiles?> ']
+    \}))
+endfunction
+inoremap <silent> <C-u> <cmd>call GFilesPut()<cr>
+tnoremap <silent> <C-u> <cmd>call GFilesPut()<cr>
+inoremap <silent> <C-o> <cmd>call BuffersPut()<cr>
+tnoremap <silent> <C-o> <cmd>call BuffersPut()<cr>
+nnoremap <C-i> :GFiles?<cr>
 nnoremap <C-o> :Buffers<cr>
 nnoremap <C-p> :Files<cr>
 

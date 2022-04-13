@@ -150,7 +150,7 @@ phab-push() {
   arc diff --edit --verbatim HEAD^
 }
 
-alias drun='sudo docker run -it --network=host --device=/dev/kfd --device=/dev/dri --group-add video --cap-add=SYS_PTRACE --security-opt seccomp=unconfined -v $HOME:/dockerx -v $SSH_AUTH_SOCK:/ssh-auth-sock -e SSH_AUTH_SOCK=/ssh-auth-sock'
+alias drun='docker run -it --rm --network=host --dns 8.8.8.8 --device=/dev/kfd --device=/dev/dri --group-add video --cap-add=SYS_PTRACE --security-opt seccomp=unconfined -v $HOME:/dockerx -v $SSH_AUTH_SOCK:/ssh-auth-sock -e SSH_AUTH_SOCK=/ssh-auth-sock'
 
 windows() {
   sudo grub-reboot "$(grep -i windows /boot/grub/grub.cfg | cut -d\' -f2 | head -1)" && sudo reboot
@@ -177,6 +177,19 @@ hip() {
   local SOURCE=''
   [[ $# -gt 0 ]] && { SOURCE="$1"; shift; }
   printf '%s' "$SOURCE" | clang -x hip --cuda-device-only - -O0 -S -o - --cuda-gpu-arch=gfx900 "$@" 2>&1 | sed '/\t\.ident/d'
+}
+
+cr() {
+  local runspec="$1"; shift
+  local build_dir="${runspec%%/*}"
+  [[ $runspec != $build_dir ]] || build_dir=release
+  local command="${runspec##*/}"
+  [[ -n $command ]] || command=check-all
+  local args=(cmake --build "$build_dir")
+  [[ $command =~ ^(llvm-lit)$ ]] || args+=(-- "$command")
+  (set -x; "${args[@]}") \
+    && [[ -x "$build_dir/bin/$command" ]] \
+    && (set -x; "$build_dir/bin/$command" "$@")
 }
 
 [ -d ~/lib ] && export LD_PRELOAD_PATH=~/lib
