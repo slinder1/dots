@@ -3,6 +3,7 @@
 #| Usage: cm [-#dehmsx] [-C dir] [-b llvm-project]...
 #|   [-o compile-option]... [-p prefix-path]... [-t llvm-target]...
 #|   [-- [cmake-args...]] <path-to-source>
+#|
 #| Wrapper for cmake(1) with saner defaults, some convenience options,
 #| and support for LLVM quirks built-in. Options with a '...' suffix
 #| can be repeated with cumulative effect.
