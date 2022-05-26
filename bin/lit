@@ -1,0 +1,98 @@
+#!/bin/bash
+
+#| Usage: lit [-C build-dir] [-pv] [test-case...]
+#|
+#| Wrapper which runs the llvm-lit contained in the given LLVM build-dir, and
+#| automates tracking which tests have failed across runs. If no test-cases are
+#| provided, the default behavior is to run all tests which failed in the last
+#| run within build-dir. If no such tests exists (i.e. all tests passed), the
+#| script exits successfully without producing any output.
+#|
+#| Any test-case which begins with "check" is actually forwarded to the build
+#| tool in build-dir; this is useful as the script will then ensure the
+#| "resultdb" json file is created even for the check* targets.
+#|
+#| Note that this wrapper appends to LIT_OPTS internally to produce a
+#| "resultdb" json file called lit.json in dir.
+#|
+#| A typical use-case might then be:
+#|
+#| $ lit check
+#| FAIL: LLVM :: ...
+#| ...
+#| $ lit -v # re-run failures from check-all, seeing the RUN lines and all output
+#| $ sed -i 's/tyop/typo/' $(lit -p) # fix a typo in all failing tests at once
+#| $ lit # re-run the failing tests
+#| $ lit # this shouldn't print anything, and should return success
+#|
+#|   -C    the LLVM build directory to run tests in (default: build).
+#|   -p    instead of actually running llvm-lit, just print out the test cases
+#|         that would be run.
+#|   -v    be as verbose as possible, asking FileCheck to dump its input and
+#|         asking lit to forward that to stdout.
+
+set -euo pipefail
+shopt -s lastpipe
+
+usage() {
+  sed -n 's/^#| \?\(.*\)$/\1/p' "$0"
+}
+
+usage_then_exit() {
+  local -r STATUS="$1"; shift
+  usage >&$(( STATUS ? 2 : 1 ))
+  exit "$STATUS"
+}
+
+OPT_CHANGE_DIR=build
+OPT_PRINT_ONLY=0
+OPT_VERBOSE=0
+
+while getopts 'C:pv' opt; do
+  case "$opt" in
+    '?') usage_then_exit 1 ;;
+    C) OPT_CHANGE_DIR="$OPTARG" ;;
+    p) OPT_PRINT_ONLY=1 ;;
+    v) OPT_VERBOSE=1 ;;
+  esac
+done
+readonly OPT_CHANGE_DIR OPT_PRINT_ONLY OPT_VERBOSE
+
+shift $(( OPTIND - 1 ))
+[[ ${1:-} == '--' ]] && shift
+
+# FIXME: fails if PWD or OPT_CHANGE_DIR embed '
+export LIT_OPTS+="--resultdb-output '$PWD/$OPT_CHANGE_DIR/lit.json'"
+
+if (($#)) && [[ $1 =~ ^check.* ]]; then
+  cmake --build "$OPT_CHANGE_DIR" -- "$1"
+  exit $?
+fi
+
+RAW_ARGV=()
+if (($#)); then
+  RAW_ARGV=("$@")
+else
+  jq -r '.tests[]|select(.expected|not).testId' "$OPT_CHANGE_DIR"/lit.json \
+    | sed -e 's#LLVM :: #llvm/test/#' -e 's#Clang :: #clang/test/#' \
+    | readarray -t RAW_ARGV
+  ((${#RAW_ARGV[@]})) || exit 0
+fi
+
+ARGV=()
+for arg in "${RAW_ARGV[@]}"; do
+  ARGV+=("$(realpath -e "$arg")")
+done
+
+if (($OPT_PRINT_ONLY)); then
+  printf '%s\n' "${ARGV[@]}"
+  exit 0
+fi
+
+cd "$OPT_CHANGE_DIR"
+
+if (($OPT_VERBOSE)); then
+  FILECHECK_OPTS='--dump-input always' bin/llvm-lit -a "${ARGV[@]}"
+else
+  bin/llvm-lit "${ARGV[@]}"
+fi
