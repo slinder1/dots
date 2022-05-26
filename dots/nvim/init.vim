@@ -79,6 +79,7 @@ call plug#begin(stdpath('data') . '/plugged')
 Plug 'airblade/vim-gitgutter'
 Plug 'antiagainst/vim-tablegen'
 Plug 'embear/vim-localvimrc'
+Plug 'itchyny/lightline.vim'
 Plug 'jackguo380/vim-lsp-cxx-highlight'
 Plug 'junegunn/fzf'
 Plug 'junegunn/fzf.vim'
@@ -88,7 +89,6 @@ Plug 'neoclide/coc.nvim', {'branch': 'release'}
 Plug 'ntpeters/vim-better-whitespace'
 Plug 'scott-linder/molokai'
 Plug 'tpope/vim-abolish'
-Plug 'tpope/vim-fugitive'
 Plug 'tpope/vim-sensible'
 Plug 'tpope/vim-sleuth'
 call plug#end()
@@ -116,7 +116,7 @@ command! -bang -nargs=* Rg
   \   fzf#vim#with_preview(), <bang>0)
 " Function to paste buffer names while in insert/terminal mode
 function! s:bufput(line)
-  call feedkeys('i' . split(a:line, '\t')[3])
+  call feedkeys(split(a:line, '\t')[3] . ' ')
 endfunction
 function! BuffersPut()
   call fzf#run(fzf#wrap({
@@ -130,7 +130,7 @@ function! BuffersPut()
 endfunction
 " Enable preview window in :GitFiles?
 function! s:gfilesput(line)
-  call feedkeys('i' . split(a:line, ' ')[1])
+  call feedkeys(split(a:line, ' ')[1] . ' ')
 endfunction
 function! GFilesPut()
   let root = split(system('git rev-parse --show-toplevel'), '\n')[0]
@@ -195,3 +195,23 @@ nnoremap <Leader>q :Bdelete<CR>
 
 " sneak
 let g:sneak#label = 1
+
+" lightline
+set noshowmode
+
+function! CocCurrentFunction()
+    return get(b:, 'coc_current_function', '')
+endfunction
+
+let g:lightline = {
+      \ 'colorscheme': 'wombat',
+      \ 'active': {
+      \   'left': [ [ 'mode', 'paste' ],
+      \             [ 'modified' ], [ 'filename', 'currentfunction' ] ],
+      \   'right': [ [ 'cocstatus', 'readonly', ] ]
+      \ },
+      \ 'component_function': {
+      \   'cocstatus': 'coc#status',
+      \   'currentfunction': 'CocCurrentFunction'
+      \ },
+      \ }
