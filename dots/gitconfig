@@ -12,6 +12,8 @@
     smtpServerPort = 587
 [pull]
     ff = only
+[commit]
+    verbose = true
 [alias]
     ## [s]et...
     # [H]EAD
