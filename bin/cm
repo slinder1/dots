@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#| Usage: cm [-#dehmsx] [-C dir] [-b llvm-project]...
+#| Usage: cm [-C build-dir] [-#dehmsx] [-b llvm-project]...
 #|   [-o compile-option]... [-p prefix-path]... [-t llvm-target]...
 #|   [-- [cmake-args...]] <path-to-source>
 #|
@@ -9,7 +9,7 @@
 #| can be repeated with cumulative effect.
 #|
 #|   -#    perform a dry run, only printing the generated CMake command line
-#|   -C    change to dir before doing anything else
+#|   -C    change to dir before doing anything else (default: build)
 #|         (path-to-source is interpreted before this takes effect)
 #|   -b    append to LLVM_ENABLE_PROJECTS (if not set: llvm;clang;lld)
 #|   -d    enable Debug build (llvm: also enable optimized TableGen)
