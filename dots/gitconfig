@@ -69,4 +69,4 @@
     # Push a debug info change
     push-dbg = push amd HEAD:refs/for/amd-stg-open%topic=SWDEV-171521,r=ttye,r=kzhuravl,r=vnalamot
 
-    push-heterogeneous = "!f() { branch=${1:-HEAD}; remote=amd-gh; prefix=refs/heads/amd-feature/heterogeneous-dwarf/; next=$(git ls-remote --refs --heads $remote | gawk 'match($2, prefix \"(.*)\", groups) { if (groups[1] > max) max = groups[1]; } END { printf \"%s%03d\\n\", prefix, max + 1; }' prefix=$prefix); git push $remote $branch:$next; git push -f $remote $branch:refs/tags/amd-feature/heterogeneous-dwarf/latest; }; f"
+    push-heterogeneous = "!f() { branch=${1:-HEAD}; remote=amd-gh; prefix=refs/heads/amd-feature/heterogeneous-dwarf/; next=$(git ls-remote --refs --heads $remote | gawk 'match($2, prefix \"(.*)\", groups) { if (groups[1] ~ /^[[:digit:]]+$/ && groups[1] > max) max = groups[1]; } END { printf \"%s%03d\\n\", prefix, max + 1; }' prefix=$prefix); git push $remote $branch:$next; git push -f $remote $branch:refs/tags/amd-feature/heterogeneous-dwarf/latest; }; f"

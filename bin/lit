@@ -79,7 +79,7 @@ fi
 RAW_ARGV=()
 if (($#)); then
   RAW_ARGV=("$@")
-else
+elif [[ -f "$OPT_CHANGE_DIR"/lit.json ]]; then
   # FIXME: Is there a more reliable way to always translate these test suites?
   # FIXME: Is there a way to reasonably select specific failing unittests?
   jq -r '.tests[]|select(.expected|not).testId' "$OPT_CHANGE_DIR"/lit.json \

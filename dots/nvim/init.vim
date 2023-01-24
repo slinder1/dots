@@ -48,6 +48,9 @@ set undofile
 " Doxygen comments
 setlocal comments-=:// | setlocal comments+=:///,://
 
+" Mouse
+set mouse=a
+
 " We need a way to consistently get to normal mode no matter where we are,
 " ideally without having to leave the home row. Pick something that doesn't
 " seem to conflict with any control sequences in terminal emulators or any
@@ -118,7 +121,7 @@ command! -bang -nargs=* Rg
   \   fzf#vim#with_preview(), <bang>0)
 " Function to paste buffer names while in insert/terminal mode
 function! s:bufput(line)
-  call feedkeys(split(a:line, '\t')[3] . ' ')
+  call feedkeys('i' . split(a:line, '\t')[3] . ' ')
 endfunction
 function! BuffersPut()
   call fzf#run(fzf#wrap({
@@ -132,7 +135,7 @@ function! BuffersPut()
 endfunction
 " Enable preview window in :GitFiles?
 function! s:gfilesput(line)
-  call feedkeys(split(a:line, ' ')[1] . ' ')
+  call feedkeys('i' . split(a:line, ' ')[1] . ' ')
 endfunction
 function! GFilesPut()
   let root = split(system('git rev-parse --show-toplevel'), '\n')[0]
@@ -190,7 +193,7 @@ local on_attach = function(client, bufnr)
   vim.keymap.set('n', '<space>rn', vim.lsp.buf.rename, bufopts)
   vim.keymap.set('n', '<space>ca', vim.lsp.buf.code_action, bufopts)
   vim.keymap.set('n', 'gr', vim.lsp.buf.references, bufopts)
-  vim.keymap.set('v', '<leader>f', '<esc><cmd>lua vim.lsp.buf.range_formatting()<cr>', bufopts)
+  vim.keymap.set('v', '<leader>f', '<cmd>lua vim.lsp.buf.format()<cr><esc>', bufopts)
   vim.api.nvim_create_user_command('A', 'ClangdSwitchSourceHeader', {})
 end
 
