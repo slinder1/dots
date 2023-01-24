@@ -1,11 +1,15 @@
 #!/bin/bash
 
+set -euo pipefail
+
 cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"
+
+./up-no-sudo
 
 git add -A
 git commit -m 'Bulk update'
 git push origin main:main
 
-for host in localhost ixt-hq-58; do
+for host in ixt-hq-58; do
     ssh "$host" 'git -C ~/dots pull; ~/dots/up-no-sudo'
 done
