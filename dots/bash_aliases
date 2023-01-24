@@ -133,12 +133,17 @@ gerrit-msg() {
 # TODO: Automatically try to merge the upstream version and the local version
 # before pushing.
 phab-msg() {
-  if [ $# -ne 1 ]; then
-    printf "usage: phab-msg revision-id\n" >&2
+  if [ $# -gt 1 ]; then
+    printf "usage: phab-msg [revision-id]\n" >&2
     return 1
   fi
   local REV_ID
-  REV_ID=$(printf "%s" "$1" | sed 's/^D\([0-9]\+\)$/\1/')
+  if [ $# -eq 1 ]; then
+    REV_ID=$(printf "%s" "$1" | sed 's/^D\([0-9]\+\)$/\1/')
+  else
+    REV_ID=$(git rev-list --format=%B --max-count=1 HEAD \
+      | sed -n 's/Differential Revision: .*\/D\([0-9]\+\)/\1/p')
+  fi
   printf '{ "revision_id": "%s" }' "$REV_ID" \
     | arc call-conduit differential.getcommitmessage -- \
     | jq -r '.["response"]'
@@ -147,7 +152,7 @@ phab-pull() {
   arc patch --skip-dependencies --nobranch "$@"
 }
 phab-push() {
-  arc diff --edit --verbatim HEAD^
+  arc diff --edit --verbatim HEAD^ && phab-msg | git commit --amend -F-
 }
 
 alias drun='docker run -it --rm --network=host --dns 8.8.8.8 --device=/dev/kfd --device=/dev/dri --group-add video --cap-add=SYS_PTRACE --security-opt seccomp=unconfined -v $HOME:/dockerx -v $SSH_AUTH_SOCK:/ssh-auth-sock -e SSH_AUTH_SOCK=/ssh-auth-sock'
