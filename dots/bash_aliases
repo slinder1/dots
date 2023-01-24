@@ -66,11 +66,11 @@ export GIT_EDITOR=$EDITOR
 export SVN_EDITOR=$EDITOR
 
 export PAGER='less -FXi'
+export LESS="-RQ"
 
 export BAT_THEME="Monokai Extended"
 
 alias tmux='tmux -2'
-alias less='less -R'
 
 v() {
   if [ $# -gt 0 ]; then
