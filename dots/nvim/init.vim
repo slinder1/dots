@@ -1,5 +1,3 @@
-"" VIM
-
 " Looks
 set fillchars=vert:│,fold:─,diff:─
 set list
@@ -59,11 +57,6 @@ inoremap <C-j> <C-\><C-n>
 tnoremap <C-j> <C-\><C-n>
 cnoremap <C-j> <C-\><C-n>
 
-" alt+t to create new tab with terminal
-tnoremap <A-t> <C-\><C-N>:tabe +term<CR>a
-inoremap <A-t> <C-\><C-N>:tabe +term<CR>a
-nnoremap <A-t> :tabe +term<CR>a
-
 " git
 autocmd FileType gitcommit,gitrebase set bufhidden=delete
 
@@ -83,25 +76,23 @@ Plug 'airblade/vim-gitgutter'
 Plug 'antiagainst/vim-tablegen'
 Plug 'embear/vim-localvimrc'
 Plug 'itchyny/lightline.vim'
-"Plug 'jackguo380/vim-lsp-cxx-highlight'
 Plug 'junegunn/fzf'
 Plug 'junegunn/fzf.vim'
 Plug 'justinmk/vim-sneak'
 Plug 'moll/vim-bbye'
+Plug 'neovim/nvim-lspconfig'
 Plug 'ntpeters/vim-better-whitespace'
+Plug 'nvim-treesitter/nvim-treesitter', {'do': ':TSUpdate'}
+Plug 'p00f/clangd_extensions.nvim'
 Plug 'scott-linder/molokai'
 Plug 'tpope/vim-abolish'
+Plug 'tpope/vim-fugitive'
 Plug 'tpope/vim-sensible'
 Plug 'tpope/vim-sleuth'
-Plug 'tpope/vim-fugitive'
-Plug 'neovim/nvim-lspconfig'
-Plug 'nvim-treesitter/nvim-treesitter', {'do': ':TSUpdate'}
 call plug#end()
 
 " Molokai
 colorscheme molokai
-
-"" Filetype
 
 " Python
 au FileType python setl nosmartindent
@@ -160,22 +151,40 @@ nnoremap <C-p> :Files<cr>
 " localvimrc
 let g:localvimrc_persistent = 2
 
-" LSP
-lua << EOF
--- Mappings.
--- See `:help vim.diagnostic.*` for documentation on any of the below functions
+" bbye
+command! -bang -complete=buffer -nargs=? Bd Bdelete<bang> <args>
+nnoremap <Leader>q :Bdelete<CR>
+
+" better-whitespace
+au TermOpen * DisableWhitespace
+
+" sneak
+let g:sneak#label = 1
+
+" lightline
+set noshowmode
+let g:lightline = {
+      \ 'colorscheme': 'wombat',
+      \ 'active': {
+      \   'left': [ [ 'mode', 'paste' ],
+      \             [ 'modified' ], [ 'relativepath' ] ],
+      \   'right': [ [ 'readonly', ] ]
+      \ },
+      \ 'component_function': {
+      \ },
+      \ }
+
+" All lua configuration:
+lua << EOL
+-- LSP
 local opts = { noremap=true, silent=true }
 vim.keymap.set('n', '<space>e', vim.diagnostic.open_float, opts)
 vim.keymap.set('n', '[d', vim.diagnostic.goto_prev, opts)
 vim.keymap.set('n', ']d', vim.diagnostic.goto_next, opts)
 vim.keymap.set('n', '<space>q', vim.diagnostic.setloclist, opts)
-
--- Use an on_attach function to only map the following keys
--- after the language server attaches to the current buffer
 local on_attach = function(client, bufnr)
   -- Enable completion triggered by <c-x><c-o>
   vim.api.nvim_buf_set_option(bufnr, 'omnifunc', 'v:lua.vim.lsp.omnifunc')
-
   -- Mappings.
   -- See `:help vim.lsp.*` for documentation on any of the below functions
   local bufopts = { noremap=true, silent=true, buffer=bufnr }
@@ -196,49 +205,21 @@ local on_attach = function(client, bufnr)
   vim.keymap.set('v', '<leader>f', '<cmd>lua vim.lsp.buf.format()<cr><esc>', bufopts)
   vim.api.nvim_create_user_command('A', 'ClangdSwitchSourceHeader', {})
 end
-
--- Use a loop to conveniently call 'setup' on multiple servers and
--- map buffer local keybindings when the language server attaches
-local servers = { 'clangd' }
-for _, lsp in pairs(servers) do
-  require('lspconfig')[lsp].setup {
+require("clangd_extensions").setup {
+  server = {
     on_attach = on_attach,
-    flags = {
-      -- This will be the default in neovim 0.7+
-      debounce_text_changes = 150,
-    }
-  }
-end
-EOF
+  },
+  extensions = {
+    inlay_hints = {
+      show_parameter_hints = false,
+      other_hints_prefix = "⸬ ",
+    },
+  },
+}
 
-" tree-sitter
-lua << EOF
+-- tree-sitter
 require'nvim-treesitter.configs'.setup {
   ensure_installed = { "cpp" },
   highlight = { enable = true },
 }
-EOF
-
-" bbye
-command! -bang -complete=buffer -nargs=? Bd Bdelete<bang> <args>
-nnoremap <Leader>q :Bdelete<CR>
-
-" better-whitespace
-au TermOpen * DisableWhitespace
-
-" sneak
-let g:sneak#label = 1
-
-" lightline
-set noshowmode
-
-let g:lightline = {
-      \ 'colorscheme': 'wombat',
-      \ 'active': {
-      \   'left': [ [ 'mode', 'paste' ],
-      \             [ 'modified' ], [ 'relativepath' ] ],
-      \   'right': [ [ 'readonly', ] ]
-      \ },
-      \ 'component_function': {
-      \ },
-      \ }
+EOL
