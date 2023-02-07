@@ -4,11 +4,8 @@ set -euo pipefail
 
 cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"
 
-readonly DELTA_URL=""
-
 readonly NVIM="$HOME/bin/nvim.appimage"
-curl -sSLfo "$NVIM" \
-  https://github.com/neovim/neovim/releases/download/nightly/nvim.appimage
+curl -sSLfo "$NVIM" 'https://github.com/neovim/neovim/releases/download/nightly/nvim.appimage'
 chmod a+x "$NVIM"
 for alt in ex vi view vim vimdiff nvim; do
   ln -sf "$NVIM" "$HOME/bin/$alt"
@@ -18,7 +15,7 @@ curl -sSLf \
     'https://github.com/dandavison/delta/releases/download/0.15.1/delta-0.15.1-x86_64-unknown-linux-musl.tar.gz' \
   | tar -C "$HOME"/bin -z --get --strip-components=1 delta-0.15.1-x86_64-unknown-linux-musl/delta
 
-pip3 -q install --user --upgrade neovim-remote cmake
+pip3 -q install --user --upgrade pip neovim-remote cmake
 
 CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
 mkdir -p "$CONFIG_HOME"
@@ -39,5 +36,5 @@ ln -sf "$(readlink -f up)" ~/bin/up
 PLUG="${XDG_DATA_HOME:-$HOME/.local/share}/nvim/site/autoload/plug.vim"
 if [ ! -f "$PLUG" ]; then
   curl -sSLfo "$PLUG" --create-dirs \
-    https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
+    'https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim'
 fi
