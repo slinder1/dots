@@ -154,6 +154,22 @@ phab-pull() {
 phab-push() {
   arc diff --edit --verbatim HEAD^ && phab-msg | git commit --amend -F-
 }
+phab-land() (
+  set -eou pipefail
+  git branch phab-land ||:
+  git checkout phab-land
+  git fetch origin main
+  git reset --hard origin/main
+  for phab in "$@"; do
+    phab-pull "$phab"
+    cm l -ga
+  done
+  while true; do
+    git fetch origin main
+    git rebase origin/main
+    git push origin HEAD:main && break || sleep 10
+  done
+)
 
 alias drun='docker run -it --rm --network=host --dns 8.8.8.8 --device=/dev/kfd --device=/dev/dri --group-add video --cap-add=SYS_PTRACE --security-opt seccomp=unconfined -v $HOME:/dockerx -v $SSH_AUTH_SOCK:/ssh-auth-sock -e SSH_AUTH_SOCK=/ssh-auth-sock'
 
