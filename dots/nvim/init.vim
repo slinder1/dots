@@ -70,6 +70,10 @@ augroup END
 nnoremap <C-n> <C-o>
 nnoremap <C-m> <C-i>
 
+" jump to previous shell prompt
+nnoremap <space>c ?^\$<CR>
+xnoremap <space>c ?^\$<CR>
+
 "" Plugins
 call plug#begin(stdpath('data') . '/plugged')
 Plug 'airblade/vim-gitgutter'
@@ -153,7 +157,7 @@ let g:localvimrc_persistent = 2
 
 " bbye
 command! -bang -complete=buffer -nargs=? Bd Bdelete<bang> <args>
-nnoremap <Leader>q :Bdelete<CR>
+nnoremap <space>d :Bdelete<CR>
 
 " better-whitespace
 au TermOpen * DisableWhitespace
@@ -202,7 +206,7 @@ local on_attach = function(client, bufnr)
   vim.keymap.set('n', '<space>rn', vim.lsp.buf.rename, bufopts)
   vim.keymap.set('n', '<space>ca', vim.lsp.buf.code_action, bufopts)
   vim.keymap.set('n', 'gr', vim.lsp.buf.references, bufopts)
-  vim.keymap.set('v', '<leader>f', '<cmd>lua vim.lsp.buf.format()<cr><esc>', bufopts)
+  vim.keymap.set('v', '<space>f', '<cmd>lua vim.lsp.buf.format()<cr><esc>', bufopts)
   vim.api.nvim_create_user_command('A', 'ClangdSwitchSourceHeader', {})
 end
 require("clangd_extensions").setup {

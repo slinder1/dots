@@ -30,6 +30,8 @@
     ## [s]et...
     # [H]EAD
     sh = switch
+    # [H]EAD detached
+    shd = switch --detach
     # HEAD [r]ef's head
     sr = reset
     # [f]ile contents
@@ -52,6 +54,8 @@
     ## [r]ebase...
     #
     r = rebase
+    # [c]continue
+    rc = rebase --continue
     # [o]nto
     ro = rebase --onto
     # [r]ebase [a]utomatically based on HEAD ref following the convention <user>/<base>/<feature>
