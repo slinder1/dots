@@ -30,6 +30,12 @@ unzip -qqod "$HOME/.local" "$HOME/.local/clangd.zip"
 rsync -a "$HOME/.local/clangd_"*/ "$HOME/.local"
 clean_clangd
 
+rm -rf "$HOME/.local/arcanist{-master,.zip}"
+curl -sSLfo "$HOME/.local/arcanist.zip" \
+  'https://github.com/phacility/arcanist/archive/refs/heads/master.zip'
+unzip -qqod "$HOME/.local" "$HOME/.local/arcanist.zip"
+ln -sf "$HOME/.local/arcanist-master/bin/arc" "$HOME/bin/arc"
+
 pip3 -q install --user --upgrade pip neovim-remote cmake
 
 CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"

@@ -22,10 +22,13 @@
 [delta]
     navigate = true
     light = false
-[merge]
-    conflictstyle = diff3
 [diff]
     colorMoved = default
+[merge]
+    conflictstyle = diff3
+    tool = nvrdiff
+[mergetool "nvrdiff"]
+    cmd = nvr --servername $NVIM -d $LOCAL $BASE $REMOTE $MERGED -c 'wincmd J | wincmd = | norm ]c[c'
 [alias]
     ## [s]et...
     # [H]EAD
@@ -70,8 +73,19 @@
     ca = commit -vv --amend
     # [e]verything
     ce = "!f() { git add -A :/ && git commit -vv; }; f"
-    # cherry [p]ick
+
+    ## [c]herry [p]ick...
     cp = cherry-pick
+    # [c]ontinue
+    cpc = cherry-pick --continue
+
+    ## [c]heck-[o]ut...
+    co = checkout
+    ## -[p]
+    cop = checkout -p
+
+    ## [m]erge[t]ool
+    mt = mergetool
 
     # What patches are in a merge?
     show-merge = "!f() { git show --stat \"$1^..$1\"; }; f"
@@ -83,6 +97,6 @@
     # Push based on HEAD ref following the convention <user>/<base>/<feature>
     push-amd = "!f() { branch=$(git rev-parse --abbrev-ref HEAD); base=\"$(printf '%s' \"$branch\" | sed 's#.*/\\(.*\\)/.*#\\1#')\"; git push \"$@\" amd HEAD:refs/for/\"$base\"; }; f"
     # Push a debug info change
-    push-dbg = push amd HEAD:refs/for/amd-stg-open%topic=SWDEV-171521,r=ttye,r=kzhuravl,r=vnalamot
+    push-dbg = push amd HEAD:refs/for/amd-stg-open%r=ttye,r=kzhuravl,r=juamarti
 
     push-heterogeneous = "!f() { branch=${1:-HEAD}; remote=amd-gh; prefix=refs/heads/amd-feature/heterogeneous-dwarf/; next=$(git ls-remote --refs --heads $remote | gawk 'match($2, prefix \"(.*)\", groups) { if (groups[1] ~ /^[[:digit:]]+$/ && groups[1] > max) max = groups[1]; } END { printf \"%s%03d\\n\", prefix, max + 1; }' prefix=$prefix); git push $remote $branch:$next; git push -f $remote $branch:refs/tags/amd-feature/heterogeneous-dwarf/latest; }; f"

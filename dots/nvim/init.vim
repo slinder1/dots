@@ -71,8 +71,14 @@ nnoremap <C-n> <C-o>
 nnoremap <C-m> <C-i>
 
 " jump to previous shell prompt
-nnoremap <space>c ?^\$<CR>
-xnoremap <space>c ?^\$<CR>
+nnoremap <space>c k?^\$<CR>
+xnoremap <space>c k?^\$<CR>
+
+" mergetool
+nnoremap <space>mr :diffget REMOTE<CR>]c
+nnoremap <space>mb :diffget BASE<CR>]c
+nnoremap <space>ml :diffget LOCAL<CR>]c
+nnoremap <space>mq :windo bd<CR>
 
 "" Plugins
 call plug#begin(stdpath('data') . '/plugged')
