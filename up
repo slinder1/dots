@@ -15,26 +15,28 @@ curl -sSLf \
     'https://github.com/dandavison/delta/releases/download/0.15.1/delta-0.15.1-x86_64-unknown-linux-musl.tar.gz' \
   | tar -C "$HOME"/bin -z --get --strip-components=1 delta-0.15.1-x86_64-unknown-linux-musl/delta
 
-clean_clangd() {
-  for f in "$HOME/.local/clangd*"; do
-    if [ -e "$f" ]; then
-      rm -rf -- "$f"
-    fi
-  done
-}
+rm -rf "$HOME/.local"
+mkdir -p "$HOME/.local/"{tmp,opt}
 
-clean_clangd
-curl -sSLfo "$HOME/.local/clangd.zip" \
+curl -sSLfo "$HOME/.local/tmp/clangd.zip" \
     'https://github.com/clangd/clangd/releases/download/15.0.6/clangd-linux-15.0.6.zip'
-unzip -qqod "$HOME/.local" "$HOME/.local/clangd.zip"
-rsync -a "$HOME/.local/clangd_"*/ "$HOME/.local"
-clean_clangd
+unzip -qqod "$HOME/.local/tmp" "$HOME/.local/tmp/clangd.zip"
+rsync -a "$HOME/.local/tmp/clangd_"*/ "$HOME/.local"
 
-rm -rf "$HOME/.local/arcanist{-master,.zip}"
-curl -sSLfo "$HOME/.local/arcanist.zip" \
+curl -sSLfo "$HOME/.local/tmp/arcanist.zip" \
   'https://github.com/phacility/arcanist/archive/refs/heads/master.zip'
-unzip -qqod "$HOME/.local" "$HOME/.local/arcanist.zip"
-ln -sf "$HOME/.local/arcanist-master/bin/arc" "$HOME/bin/arc"
+unzip -qqod "$HOME/.local/opt" "$HOME/.local/tmp/arcanist.zip"
+ln -sf "$HOME/.local/opt/arcanist-master/bin/arc" "$HOME/bin/arc"
+
+curl -sSLfo "$HOME/.local/tmp/mold.tar.gz" \
+    'https://github.com/rui314/mold/releases/download/v2.0.0/mold-2.0.0-x86_64-linux.tar.gz'
+tar -C "$HOME/.local/tmp" -xzf "$HOME/.local/tmp/mold.tar.gz"
+rsync -a "$HOME/.local/tmp/mold-"*/ "$HOME/.local"
+
+curl -sSLfo "$HOME/.local/tmp/gh.tar.gz" \
+    'https://github.com/cli/cli/releases/download/v2.34.0/gh_2.34.0_linux_amd64.tar.gz'
+tar -C "$HOME/.local/tmp" -xzf "$HOME/.local/tmp/gh.tar.gz"
+rsync -a "$HOME/.local/tmp/gh_"*/ "$HOME/.local"
 
 pip3 -q install --user --upgrade pip neovim-remote cmake
 

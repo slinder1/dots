@@ -4,6 +4,9 @@ set list
 set listchars=tab:»·,trail:·
 set wrap
 set linebreak
+set winbar=%F
+set laststatus=3
+set cmdheight=0
 
 " Columns
 set colorcolumn=81,82
@@ -66,7 +69,8 @@ augroup filetypedetect
   autocmd BufNewFile,BufRead *mutt-* setf mail
 augroup END
 
-" jumplist
+" jumps
+set jumpoptions=view
 nnoremap <C-n> <C-o>
 nnoremap <C-m> <C-i>
 
@@ -75,6 +79,7 @@ nnoremap <space>c k?^\$<CR>
 xnoremap <space>c k?^\$<CR>
 
 " mergetool
+set diffopt+=linematch:60
 nnoremap <space>mr :diffget REMOTE<CR>]c
 nnoremap <space>mb :diffget BASE<CR>]c
 nnoremap <space>ml :diffget LOCAL<CR>]c
@@ -95,6 +100,7 @@ Plug 'ntpeters/vim-better-whitespace'
 Plug 'nvim-treesitter/nvim-treesitter', {'do': ':TSUpdate'}
 Plug 'p00f/clangd_extensions.nvim'
 Plug 'scott-linder/molokai'
+Plug 'smjonas/live-command.nvim'
 Plug 'tpope/vim-abolish'
 Plug 'tpope/vim-fugitive'
 Plug 'tpope/vim-sensible'
@@ -176,60 +182,8 @@ set noshowmode
 let g:lightline = {
       \ 'colorscheme': 'wombat',
       \ 'active': {
-      \   'left': [ [ 'mode', 'paste' ],
-      \             [ 'modified' ], [ 'relativepath' ] ],
-      \   'right': [ [ 'readonly', ] ]
-      \ },
-      \ 'component_function': {
+      \   'left': [ [ 'mode', 'paste' ], [ 'modified' ] ]
       \ },
       \ }
 
-" All lua configuration:
-lua << EOL
--- LSP
-local opts = { noremap=true, silent=true }
-vim.keymap.set('n', '<space>e', vim.diagnostic.open_float, opts)
-vim.keymap.set('n', '[d', vim.diagnostic.goto_prev, opts)
-vim.keymap.set('n', ']d', vim.diagnostic.goto_next, opts)
-vim.keymap.set('n', '<space>q', vim.diagnostic.setloclist, opts)
-local on_attach = function(client, bufnr)
-  -- Enable completion triggered by <c-x><c-o>
-  vim.api.nvim_buf_set_option(bufnr, 'omnifunc', 'v:lua.vim.lsp.omnifunc')
-  -- Mappings.
-  -- See `:help vim.lsp.*` for documentation on any of the below functions
-  local bufopts = { noremap=true, silent=true, buffer=bufnr }
-  vim.keymap.set('n', 'gD', vim.lsp.buf.declaration, bufopts)
-  vim.keymap.set('n', 'gd', vim.lsp.buf.definition, bufopts)
-  vim.keymap.set('n', 'K', vim.lsp.buf.hover, bufopts)
-  vim.keymap.set('n', 'gi', vim.lsp.buf.implementation, bufopts)
-  vim.keymap.set('n', '<C-k>', vim.lsp.buf.signature_help, bufopts)
-  vim.keymap.set('n', '<space>wa', vim.lsp.buf.add_workspace_folder, bufopts)
-  vim.keymap.set('n', '<space>wr', vim.lsp.buf.remove_workspace_folder, bufopts)
-  vim.keymap.set('n', '<space>wl', function()
-    print(vim.inspect(vim.lsp.buf.list_workspace_folders()))
-  end, bufopts)
-  vim.keymap.set('n', '<space>D', vim.lsp.buf.type_definition, bufopts)
-  vim.keymap.set('n', '<space>rn', vim.lsp.buf.rename, bufopts)
-  vim.keymap.set('n', '<space>ca', vim.lsp.buf.code_action, bufopts)
-  vim.keymap.set('n', 'gr', vim.lsp.buf.references, bufopts)
-  vim.keymap.set('v', '<space>f', '<cmd>lua vim.lsp.buf.format()<cr><esc>', bufopts)
-  vim.api.nvim_create_user_command('A', 'ClangdSwitchSourceHeader', {})
-end
-require("clangd_extensions").setup {
-  server = {
-    on_attach = on_attach,
-  },
-  extensions = {
-    inlay_hints = {
-      show_parameter_hints = false,
-      other_hints_prefix = "⸬ ",
-    },
-  },
-}
-
--- tree-sitter
-require'nvim-treesitter.configs'.setup {
-  ensure_installed = { "cpp" },
-  highlight = { enable = true },
-}
-EOL
+lua require("tail")

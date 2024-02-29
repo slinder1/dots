@@ -53,6 +53,9 @@
     vlv = log --decorate
     # [l]og [g]raph
     vlg = log --decorate --oneline --graph --all
+    # [a]utomatic base following convention <user>/<base>/<feature>
+    vab = "!f() { branch=\"$(git rev-parse --symbolic-full-name HEAD)\"; printf '%s' \"$branch\" | awk -F/ '$1==\"refs\" && $2==\"heads\" && NF==5 { print $4; } $1!=\"refs\" || $2!=\"heads\" || NF!=5 { print \"unknown base branch\" }'; }; f"
+    vat = "!f() { branch=\"$(git rev-parse --symbolic-full-name HEAD)\"; printf '%s' \"$branch\" | awk -F/ '$1==\"refs\" && $2==\"heads\" && NF==5 { print $5; } $1!=\"refs\" || $2!=\"heads\" || NF!=5 { print \"unknown topic branch\" }'; }; f"
 
     ## [r]ebase...
     #
@@ -62,9 +65,9 @@
     # [o]nto
     ro = rebase --onto
     # [r]ebase [a]utomatically based on HEAD ref following the convention <user>/<base>/<feature>
-    ra = "!f() { branch=$(git rev-parse --abbrev-ref HEAD); base=\"$(printf '%s' \"$branch\" | sed 's#.*/\\(.*\\)/.*#\\1#')\"; git rebase \"$@\" \"$base\" \"$branch\"; }; f"
+    ra = "!f() { git rebase \"$@\" \"$(git vab)\"; }; f"
     # [p]ull base, then [r]ebase [a]utomatically based on HEAD ref following the convention <user>/<base>/<feature>
-    pra = "!f() { branch=$(git rev-parse --abbrev-ref HEAD); base=\"$(printf '%s' \"$branch\" | sed 's#.*/\\(.*\\)/.*#\\1#')\"; git checkout \"$base\"; git pull; git rebase \"$@\" \"$base\" \"$branch\"; }; f"
+    pra = "!f() { git sh \"$(git vab)\" && git pull && git sh - && git rebase \"$@\" \"$(git vab)\"; }; f"
 
     ## [c]ommit...
     #
@@ -94,9 +97,17 @@
     # Shortcut for deleting current branch and checking out the previous HEAD (git-branch doesn't support the `-` notation for `@{-1}`)
     done = "!f() { git checkout - && git branch -D @{-1}; }; f"
 
+    #
+    push-external-pr = "!f() { git push \"$@\" origin HEAD:\"$(git vat)\"; }; f"
     # Push based on HEAD ref following the convention <user>/<base>/<feature>
-    push-amd = "!f() { branch=$(git rev-parse --abbrev-ref HEAD); base=\"$(printf '%s' \"$branch\" | sed 's#.*/\\(.*\\)/.*#\\1#')\"; git push \"$@\" amd HEAD:refs/for/\"$base\"; }; f"
+    push-amd = "!f() { git push \"$@\" amd HEAD:refs/for/\"$(git vab)\"; }; f"
     # Push a debug info change
     push-dbg = push amd HEAD:refs/for/amd-stg-open%r=ttye,r=kzhuravl,r=juamarti
 
-    push-heterogeneous = "!f() { branch=${1:-HEAD}; remote=amd-gh; prefix=refs/heads/amd-feature/heterogeneous-dwarf/; next=$(git ls-remote --refs --heads $remote | gawk 'match($2, prefix \"(.*)\", groups) { if (groups[1] ~ /^[[:digit:]]+$/ && groups[1] > max) max = groups[1]; } END { printf \"%s%03d\\n\", prefix, max + 1; }' prefix=$prefix); git push $remote $branch:$next; git push -f $remote $branch:refs/tags/amd-feature/heterogeneous-dwarf/latest; }; f"
+    push-heterogeneous = "!f() { branch=${1:-HEAD}; remote=amdgh; prefix=refs/heads/amd-feature/heterogeneous-dwarf/; next=$(git ls-remote --refs --heads $remote | gawk 'match($2, prefix \"(.*)\", groups) { if (groups[1] ~ /^[[:digit:]]+$/ && groups[1] > max) max = groups[1]; } END { printf \"%s%03d\\n\", prefix, max + 1; }' prefix=$prefix); git push $remote $branch:$next; git push -f $remote $branch:refs/tags/amd-feature/heterogeneous-dwarf/latest; }; f"
+[credential "https://github.com"]
+	helper = 
+	helper = !/home/slinder1/.local/bin/gh auth git-credential
+[credential "https://gist.github.com"]
+	helper = 
+	helper = !/home/slinder1/.local/bin/gh auth git-credential
