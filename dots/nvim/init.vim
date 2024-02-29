@@ -99,7 +99,7 @@ Plug 'neovim/nvim-lspconfig'
 Plug 'ntpeters/vim-better-whitespace'
 Plug 'nvim-treesitter/nvim-treesitter', {'do': ':TSUpdate'}
 Plug 'p00f/clangd_extensions.nvim'
-Plug 'scott-linder/molokai'
+Plug 'sainnhe/sonokai'
 Plug 'smjonas/live-command.nvim'
 Plug 'tpope/vim-abolish'
 Plug 'tpope/vim-fugitive'
@@ -107,8 +107,13 @@ Plug 'tpope/vim-sensible'
 Plug 'tpope/vim-sleuth'
 call plug#end()
 
-" Molokai
-colorscheme molokai
+" Colorscheme
+set termguicolors
+let g:sonokai_style = 'default'
+let g:sonokai_better_performance = 1
+let g:sonokai_dim_inactive_windows = 1
+let g:sonokai_diagnostic_virtual_text = 'colored'
+colorscheme sonokai
 
 " Python
 au FileType python setl nosmartindent
@@ -180,7 +185,7 @@ let g:sneak#label = 1
 " lightline
 set noshowmode
 let g:lightline = {
-      \ 'colorscheme': 'wombat',
+      \ 'colorscheme': 'sonokai',
       \ 'active': {
       \   'left': [ [ 'mode', 'paste' ], [ 'modified' ] ]
       \ },
