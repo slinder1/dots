@@ -35,7 +35,7 @@ start_agent() {
   ssh-add
 }
 
-if [ -f ~/.ssh/id_rsa ]; then
+if [ -f ~/.ssh/id_ed25519 ]; then
   if [ -f "$SSH_ENV" ]; then
     . "$SSH_ENV"
     ps "$SSH_AGENT_PID" | grep -q ssh-agent || start_agent
@@ -220,6 +220,8 @@ cr() {
 }
 
 [ -d ~/lib ] && export LD_PRELOAD_PATH=~/lib
-[ -d ~/llvm-project/main/release/bin ] && export PATH=~/llvm-project/main/release/bin:"$PATH"
+[ -d ~/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/bin/ ] && export PATH=~/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/bin/:"$PATH"
 [ -d ~/vendor/arcanist/bin ] && export PATH=~/vendor/arcanist/bin:"$PATH"
 [ -f ~/etc/cc.env ] && . ~/etc/cc.env
+
+export PATH="${PATH%%:/mnt/c*}"
