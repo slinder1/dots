@@ -15,15 +15,19 @@
 [commit]
     verbose = true
 [core]
-    pager = delta
-[interactive]
-    diffFilter = delta --color-only
-    singleKey = true
+    pager = delta --pager='ov -F'
+[pager]
+    diff = delta --features ov-diff
+    show  = delta --features ov-diff
+    log  = delta --features ov-log
 [delta]
     navigate = true
+    side-by-side = true
     light = false
-[diff]
-    colorMoved = default
+[delta "ov-diff"]
+    pager=ov -F --section-delimiter '^(commit|added:|removed:|renamed:|Δ)' --section-header --pattern '•'
+[delta "ov-log"]
+    pager=ov -F --section-delimiter '^commit' --section-header-num 3
 [merge]
     conflictstyle = diff3
     tool = nvrdiff
@@ -102,7 +106,7 @@
     # Push based on HEAD ref following the convention <user>/<base>/<feature>
     push-amd = "!f() { git push \"$@\" amd HEAD:refs/for/\"$(git vab)\"; }; f"
     # Push a debug info change
-    push-dbg = push amd HEAD:refs/for/amd-stg-open%r=ttye,r=kzhuravl,r=juamarti
+    push-dbg = push amd HEAD:refs/for/amd-staging%r=ttye,r=kzhuravl,r=epilking
 
     push-heterogeneous = "!f() { branch=${1:-HEAD}; remote=amdgh; prefix=refs/heads/amd-feature/heterogeneous-dwarf/; next=$(git ls-remote --refs --heads $remote | gawk 'match($2, prefix \"(.*)\", groups) { if (groups[1] ~ /^[[:digit:]]+$/ && groups[1] > max) max = groups[1]; } END { printf \"%s%03d\\n\", prefix, max + 1; }' prefix=$prefix); git push $remote $branch:$next; git push -f $remote $branch:refs/tags/amd-feature/heterogeneous-dwarf/latest; }; f"
 [credential "https://github.com"]

@@ -38,7 +38,7 @@ export LANG=en_US.UTF-8
 export EDITOR='nvr -s --remote-wait'
 export GIT_EDITOR=$EDITOR
 export SVN_EDITOR=$EDITOR
-export PAGER='less -FXi'
+export PAGER='ov'
 export LESS="-RQ"
 
 alias tmux='tmux -2'

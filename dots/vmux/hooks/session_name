@@ -1,0 +1,6 @@
+#!/bin/sh
+mypwd=$HOME/llvm-project/"$1"
+if [ -e "$mypwd" ]
+then
+echo PWD="$mypwd"
+fi
