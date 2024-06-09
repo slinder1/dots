@@ -2,62 +2,114 @@
 
 set -xeuo pipefail
 
-cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"
+ROOT="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"
+readonly ROOT
 
-readonly NVIM="$HOME/bin/nvim.appimage"
-curl -sSLfo "$NVIM" 'https://github.com/neovim/neovim/releases/download/nightly/nvim.appimage'
-chmod a+x "$NVIM"
-for alt in ex vi view vim vimdiff nvim; do
-  ln -sf "$NVIM" "$HOME/bin/$alt"
-done
+##-Utilities------------------------------------------------------------------##
+# Not intended as end-user entrypoints.
+##----------------------------------------------------------------------------##
 
-curl -sSLf \
-    'https://github.com/dandavison/delta/releases/download/0.15.1/delta-0.15.1-x86_64-unknown-linux-musl.tar.gz' \
-  | tar -C "$HOME"/bin -z --get --strip-components=1 delta-0.15.1-x86_64-unknown-linux-musl/delta
-
-rm -rf "$HOME/.local"
-mkdir -p "$HOME/.local/"{tmp,opt}
-
-curl -sSLfo "$HOME/.local/tmp/clangd.zip" \
-    'https://github.com/clangd/clangd/releases/download/15.0.6/clangd-linux-15.0.6.zip'
-unzip -qqod "$HOME/.local/tmp" "$HOME/.local/tmp/clangd.zip"
-rsync -a "$HOME/.local/tmp/clangd_"*/ "$HOME/.local"
-
-curl -sSLfo "$HOME/.local/tmp/arcanist.zip" \
-  'https://github.com/phacility/arcanist/archive/refs/heads/master.zip'
-unzip -qqod "$HOME/.local/opt" "$HOME/.local/tmp/arcanist.zip"
-ln -sf "$HOME/.local/opt/arcanist-master/bin/arc" "$HOME/bin/arc"
-
-curl -sSLfo "$HOME/.local/tmp/mold.tar.gz" \
-    'https://github.com/rui314/mold/releases/download/v2.0.0/mold-2.0.0-x86_64-linux.tar.gz'
-tar -C "$HOME/.local/tmp" -xzf "$HOME/.local/tmp/mold.tar.gz"
-rsync -a "$HOME/.local/tmp/mold-"*/ "$HOME/.local"
-
-curl -sSLfo "$HOME/.local/tmp/gh.tar.gz" \
-    'https://github.com/cli/cli/releases/download/v2.34.0/gh_2.34.0_linux_amd64.tar.gz'
-tar -C "$HOME/.local/tmp" -xzf "$HOME/.local/tmp/gh.tar.gz"
-rsync -a "$HOME/.local/tmp/gh_"*/ "$HOME/.local"
-
-pip3 -q install --user --upgrade pip neovim-remote cmake
-
-CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
-mkdir -p "$CONFIG_HOME"
-for d in dots/*; do
-  if [ -d "$d" ]; then
-    ln -sf "$(readlink -f "$d")" -t "$CONFIG_HOME"
+git_get() (
+  if [ ! -e "$2" ]; then
+    git clone "$1" "$2"
   else
-    ln -sf "$(readlink -f "$d")" ~/."$(basename "$d")"
+    git -C "$2" pull
   fi
-done
+)
 
-mkdir -p ~/bin
-for b in bin/*; do
-  ln -sf "$(readlink -f "$b")" ~/bin/"$(basename "$b")"
-done
-ln -sf "$(readlink -f up)" ~/bin/up
+down() (
+  mkdir -p ~/.cache/up
+  wget -nv -NP ~/.cache/up "$1"
+  printf '%s/.cache/up/%s' ~ "${1##*/}"
+)
 
-PLUG="${XDG_DATA_HOME:-$HOME/.local/share}/nvim/site/autoload/plug.vim"
-if [ ! -f "$PLUG" ]; then
-  curl -sSLfo "$PLUG" --create-dirs \
-    'https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim'
-fi
+##-Subcommands----------------------------------------------------------------##
+# Every function below constitutes an intended entrypoint into the script.
+##----------------------------------------------------------------------------##
+
+# Typically initial setup, or system upgrade, but requires apt-based system
+# and so is not included in "all".
+apt() (
+  sudo apt update -y
+  sudo apt upgrade -y
+  sudo apt install -y build-essential curl zsh sqlite3 unzip pip
+)
+
+zsh() (
+  if [ ! -e ~/.config/zsh ]; then
+    ZSH=~/.config/zsh KEEP_ZSHRC=yes RUNZSH=no sh "$(down https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+    mkdir -p ~/.config/zsh/custom/plugins/
+  else
+    "$ZSH/tools/upgrade.sh"
+  fi
+  git_get https://github.com/reobin/typewritten ~/.config/zsh/custom/typewritten
+)
+
+etc() (
+  cd "$ROOT"/etc
+  for name in *; do
+    if [ -d "$name" ]; then
+      ln -sf "$ROOT"/etc/"$name" ~/.config
+    else
+      ln -sf "$ROOT"/etc/"$name" ~/."$name"
+    fi
+  done
+)
+
+bin() (
+  mkdir -p ~/.local/bin
+  cd "$ROOT"/bin
+  for name in *; do
+    ln -sf "$ROOT"/bin/"$name" ~/.local/bin/"$name"
+  done
+)
+
+pip() (
+  pip3 -q install --user --upgrade pip neovim-remote cmake
+)
+
+pkg() (
+  rm -rf ~/.up
+  mkdir ~/.up
+  cd ~/.up
+  # neovim
+  tar --directory ~/.up --get --gzip --strip-components=1 -f \
+    "$(down https://github.com/neovim/neovim/releases/download/stable/nvim-linux64.tar.gz)"
+  # fzf
+  tar --directory ~/.up/bin --get --gzip -f \
+    "$(down https://github.com/junegunn/fzf/releases/download/0.38.0/fzf-0.38.0-linux_amd64.tar.gz)"
+  # rg
+  tar --directory ~/.up/bin --get --gzip --strip-components=1 -f \
+    "$(down https://github.com/BurntSushi/ripgrep/releases/download/13.0.0/ripgrep-13.0.0-x86_64-unknown-linux-musl.tar.gz)" \
+    ripgrep-13.0.0-x86_64-unknown-linux-musl/rg
+  # fd
+  tar --directory ~/.up/bin --get --gzip --strip-components=1 -f \
+    "$(down https://github.com/sharkdp/fd/releases/download/v8.7.0/fd-v8.7.0-x86_64-unknown-linux-musl.tar.gz)" \
+    fd-v8.7.0-x86_64-unknown-linux-musl/fd
+  # delta
+  tar --directory ~/.up/bin --get --gzip --strip-components=1 -f \
+    "$(down https://github.com/dandavison/delta/releases/download/0.15.1/delta-0.15.1-x86_64-unknown-linux-musl.tar.gz)" \
+    delta-0.15.1-x86_64-unknown-linux-musl/delta
+  # gh
+  tar --directory ~/.up --get --gzip --strip-components=1 -f \
+    "$(down https://github.com/cli/cli/releases/download/v2.34.0/gh_2.34.0_linux_amd64.tar.gz)"
+  # lua-language-server
+  mkdir lua-language-server
+  tar --directory lua-language-server --get --gzip -f \
+    "$(down https://github.com/LuaLS/lua-language-server/releases/download/3.7.1/lua-language-server-3.7.1-linux-x64.tar.gz)"
+  ln -s "$PWD"/lua-language-server/bin/lua-language-server bin/
+  # clangd
+  unzip -qq "$(down https://github.com/clangd/clangd/releases/download/15.0.6/clangd-linux-15.0.6.zip)"
+  rsync -a clangd_*/ .
+  rm -rf clangd_* LICENSE.TXT
+)
+
+all() {
+  zsh
+  etc
+  bin
+  pip
+  pkg
+}
+
+"$@"

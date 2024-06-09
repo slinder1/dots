@@ -1,0 +1,148 @@
+export PATH=$HOME/.up/bin:$HOME/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/usr/lib/wsl/lib
+export ZSH="$HOME/.config/zsh"
+ZSH_THEME=""
+
+fpath+="$HOME/.config/zsh/custom/typewritten"
+TYPEWRITTEN_PROMPT_LAYOUT="pure_verbose"
+TYPEWRITTEN_SYMBOL="$"
+TYPEWRITTEN_DISABLE_RETURN_CODE=true
+autoload -U promptinit; promptinit
+prompt typewritten
+
+HYPHEN_INSENSITIVE="true"
+
+zstyle ':omz:update' mode reminder
+zstyle ':omz:update' frequency 13
+
+# Uncomment the following line if pasting URLs and other text is messed up.
+# DISABLE_MAGIC_FUNCTIONS="true"
+
+# Uncomment the following line if you want to disable marking untracked files
+# under VCS as dirty. This makes repository status check for large repositories
+# much, much faster.
+DISABLE_UNTRACKED_FILES_DIRTY="true"
+
+# Which plugins would you like to load?
+# Standard plugins can be found in $ZSH/plugins/
+# Custom plugins may be added to $ZSH_CUSTOM/plugins/
+# Example format: plugins=(rails git textmate ruby lighthouse)
+# Add wisely, as too many plugins slow down shell startup.
+plugins=(git vi-mode ssh-agent)
+zstyle :omz:plugins:ssh-agent agent-forwarding yes
+source $ZSH/oh-my-zsh.sh
+
+# User configuration
+
+# export MANPATH="/usr/local/man:$MANPATH"
+export LANG=en_US.UTF-8
+export EDITOR='nvr -s --remote-wait'
+export GIT_EDITOR=$EDITOR
+export SVN_EDITOR=$EDITOR
+export PAGER='less -FXi'
+export LESS="-RQ"
+
+alias tmux='tmux -2'
+v() {
+  if [ $# -gt 0 ]; then
+    if [ -n "$NVIM" ]; then
+      nvr --servername "$NVIM" --nostart "$@"
+    else
+      nvim "$@"
+    fi
+  else
+    if [ -n "$NVIM" ]; then
+      printf "unset NVIM and try again\n" >&2
+      return 1
+    fi
+    nvim +term +starti
+  fi
+}
+alias sp='nvr -o'
+alias vsp='nvr -O'
+alias tabe='nvr -p'
+alias vd='nvr -d'
+alias vp='nvr -l'
+alias a='tput bel'
+
+SSH_ENV=~/.ssh/env
+start_agent() {
+  touch "$SSH_ENV"
+  chmod 600 "$SSH_ENV"
+  ssh-agent | sed '/^echo/d' >"$SSH_ENV"
+  . "$SSH_ENV"
+  ssh-add
+}
+
+if [ -f ~/.ssh/id_ed25519 ]; then
+  if [ -f "$SSH_ENV" ]; then
+    . "$SSH_ENV"
+    ps "$SSH_AGENT_PID" | grep -q ssh-agent || start_agent
+  else
+    start_agent
+  fi
+else
+  if [[ -S "$SSH_AUTH_SOCK" && ! -L "$SSH_AUTH_SOCK" ]]; then
+    ln -sf "$SSH_AUTH_SOCK" ~/.ssh/ssh_auth_sock
+  fi
+  export SSH_AUTH_SOCK=~/.ssh/ssh_auth_sock
+fi
+
+alias drun='docker run -it --rm --network=host --dns 8.8.8.8 --device=/dev/kfd --device=/dev/dri --group-add video --cap-add=SYS_PTRACE --security-opt seccomp=unconfined -v $HOME:/dockerx -v $SSH_AUTH_SOCK:/ssh-auth-sock -e SSH_AUTH_SOCK=/ssh-auth-sock'
+
+gerrit() {
+  local SAVED
+  SAVED="$(git config --local --bool --get gerrit.createChangeId)"
+  if [[ $# -eq 0 ]]; then
+    if [[ "$SAVED" == false ]]; then
+      git config --local --bool gerrit.createChangeId true
+    else
+      git config --local --bool gerrit.createChangeId false
+    fi
+  else
+    git config --local --bool gerrit.createChangeId true
+    "$@"
+    git config --local --bool gerrit.createChangeId "$SAVED"
+  fi
+}
+gerrit-msg() {
+  python3 -c 'import sys; from urllib.parse import quote_plus; print(quote_plus(sys.stdin.readline().strip()))'
+}
+
+c() {
+  local SOURCE=''
+  [[ $# -gt 0 ]] && { SOURCE="$1"; shift; }
+  PREAMBLE="#include <stdint.h>\n"
+  for bits in 8 16 32 64; do
+    PREAMBLE+="typedef int${bits}_t i${bits};\n"
+    PREAMBLE+="typedef uint${bits}_t u${bits};\n"
+  done
+  printf "${PREAMBLE}\n%s" "$SOURCE" | clang -x c - -S -o - --target=aarch64-unknown-linux "$@" 2>&1
+}
+
+ocl() {
+  local SOURCE=''
+  [[ $# -gt 0 ]] && { SOURCE="$1"; shift; }
+  printf '%s' "$SOURCE" | clang -x cl -Xclang -finclude-default-header - -O0 -S -o - --target=amdgcn-amd-amdhsa -mcpu=gfx900 "$@" 2>&1 | sed -e '/^!opencl.ocl.version/d' -e '/^!llvm.ident/d'
+}
+
+hip() {
+  local SOURCE=''
+  [[ $# -gt 0 ]] && { SOURCE="$1"; shift; }
+  printf '%s' "$SOURCE" | clang -x hip --cuda-device-only - -O0 -S -o - --cuda-gpu-arch=gfx900 "$@" 2>&1 | sed '/\t\.ident/d'
+}
+
+cr() {
+  local runspec="$1"; shift
+  local build_dir="${runspec%%/*}"
+  [[ $runspec != $build_dir ]] || build_dir=release
+  local command="${runspec##*/}"
+  [[ -n $command ]] || command=check-all
+  local args=(cmake --build "$build_dir")
+  [[ $command =~ ^(llvm-lit)$ ]] || args+=(-- "$command")
+  (set -x; "${args[@]}") \
+    && [[ -x "$build_dir/bin/$command" ]] \
+    && (set -x; "$build_dir/bin/$command" "$@")
+}
+
+[ -d ~/lib ] && export LD_PRELOAD_PATH=~/lib
+[ -f ~/etc/cc.env ] && . ~/etc/cc.env
