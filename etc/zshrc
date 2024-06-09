@@ -146,3 +146,4 @@ cr() {
 
 [ -d ~/lib ] && export LD_PRELOAD_PATH=~/lib
 [ -f ~/etc/cc.env ] && . ~/etc/cc.env
+. "$HOME/.cargo/env"

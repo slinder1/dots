@@ -75,6 +75,13 @@ vim.api.nvim_create_autocmd('LspAttach', {
   end,
 })
 
+local delta_goto_file_at_line_number = function()
+  local linenumber = vim.fn.expand('<cword>')
+  local filename = string.gsub(vim.fn.getline(vim.fn.search('Δ ', 'bn')), 'Δ ', "", 1)
+  vim.cmd(string.format('e +:%s %s', linenumber, filename))
+end
+vim.keymap.set('n', '<space>gf', delta_goto_file_at_line_number)
+
 local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
 if not vim.loop.fs_stat(lazypath) then
   vim.fn.system({

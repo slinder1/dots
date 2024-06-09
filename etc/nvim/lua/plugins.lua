@@ -81,7 +81,7 @@ return {
       }
       local builtin = require 'telescope.builtin'
       local modes = { 'n', 't', 'i' }
-      vim.keymap.set(modes, '<C-g>', builtin.live_grep)
+      --vim.keymap.set(modes, '<C-g>', builtin.live_grep)
       vim.keymap.set(modes, '<C-o>', builtin.buffers)
       vim.keymap.set(modes, '<C-p>', builtin.find_files)
       modes = { 'n' }
@@ -193,4 +193,8 @@ return {
   'tpope/vim-abolish',
   'tpope/vim-fugitive',
   'tpope/vim-sleuth',
+  {
+    'yazgoo/vmux',
+    build = 'cargo install vmux',
+  },
 }
