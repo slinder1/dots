@@ -43,6 +43,7 @@ zsh() (
     "$ZSH/tools/upgrade.sh"
   fi
   git_get https://github.com/reobin/typewritten ~/.config/zsh/custom/typewritten
+  git_get https://github.com/zsh-users/zsh-syntax-highlighting.git ~/.config/zsh/custom/plugins/zsh-syntax-highlighting
 )
 
 etc() (
@@ -93,6 +94,11 @@ pkg() (
   # gh
   tar --directory ~/.up --get --gzip --strip-components=1 -f \
     "$(down https://github.com/cli/cli/releases/download/v2.34.0/gh_2.34.0_linux_amd64.tar.gz)"
+  rm -f LICENSE
+  # ov
+  unzip -qq "$(down https://github.com/noborus/ov/releases/download/v0.34.1/ov_0.34.1_linux_amd64.zip)"
+  rm -f LICENSE README.MD ov*.yaml
+  rsync -a ov bin/
   # lua-language-server
   mkdir lua-language-server
   tar --directory lua-language-server --get --gzip -f \

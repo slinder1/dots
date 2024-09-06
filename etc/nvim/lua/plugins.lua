@@ -1,22 +1,27 @@
 return {
   {
     'sainnhe/sonokai',
-    lazy = false,
     priority = 1000,
     config = function()
       vim.o.termguicolors = true
       vim.g.sonokai_style = 'default'
       vim.g.sonokai_better_performance = 1
-      vim.g.dim_inactive_windows = 1
-      vim.g.diagnostic_virtual_text = 'colored'
+      vim.g.sonokai_dim_inactive_windows = 1
+      vim.g.sonokai_diagnostic_virtual_text = 'colored'
       vim.cmd.colorscheme('sonokai')
     end,
+  },
+  {
+    "folke/lazydev.nvim",
+    ft = 'lua',
+    config = true,
   },
   'airblade/vim-gitgutter',
   {
     'nvim-lualine/lualine.nvim',
+    dependencies = { 'nvim-tree/nvim-web-devicons' },
     config = function()
-      vim.opt.cmdheight = 0
+      --vim.opt.cmdheight = 0
       vim.opt.laststatus = 3
       vim.opt.showmode = false
       local sections_config = {
@@ -48,17 +53,23 @@ return {
     'nvim-telescope/telescope.nvim',
     dependencies = {
       'nvim-lua/plenary.nvim',
-      'gbprod/yanky.nvim',
+      'keyvchan/telescope-find-pickers.nvim',
       'debugloop/telescope-undo.nvim',
+      { 'nvim-telescope/telescope-fzf-native.nvim', build = 'make', },
+      'gbprod/yanky.nvim',
     },
     config = function()
       local telescope = require 'telescope'
       local actions = require 'telescope.actions'
       local action_state = require 'telescope.actions.state'
+      local builtin = require 'telescope.builtin'
       telescope.setup {
         defaults = {
           mappings = {
             i = {
+              ['<C-j>'] = function(_)
+                vim.cmd.stopinsert()
+              end,
               ['<M-p>'] = function(prompt_bufnr)
                 actions.close(prompt_bufnr)
                 vim.api.nvim_put({
@@ -68,28 +79,36 @@ return {
             },
           },
         },
-        extensions = {
-          undo = {},
-          yank_history = {},
-        },
         pickers = {
+          builtin = {
+            previewer = false,
+          },
           buffers = {
             ignore_current_buffer = true,
             sort_mru = true,
           },
         },
       }
-      local builtin = require 'telescope.builtin'
+      -- Lazy loading would make find_pickers essentially useless until
+      -- the extensions are activated by some other means, so load eagerly
+      for _, ext in ipairs({ 'find_pickers', 'undo', 'fzf', 'yank_history' }) do
+        telescope.load_extension(ext)
+      end
+      vim.cmd.cnoreabbrev('T', 'Telescope')
       local modes = { 'n', 't', 'i' }
-      --vim.keymap.set(modes, '<C-g>', builtin.live_grep)
+      vim.keymap.set(modes, '<C-f>', function()
+        telescope.extensions.find_pickers.find_pickers {}
+      end)
       vim.keymap.set(modes, '<C-o>', builtin.buffers)
-      vim.keymap.set(modes, '<C-p>', builtin.find_files)
       modes = { 'n' }
-      vim.keymap.set(modes, '<space>th', builtin.help_tags)
-      vim.keymap.set(modes, '<space>tu', function()
+      vim.keymap.set(modes, '<space><space>f', builtin.find_files)
+      vim.keymap.set(modes, '<space><space>g', builtin.live_grep)
+      vim.keymap.set(modes, '<space><space>r', builtin.registers)
+      vim.keymap.set(modes, '<space><space>h', builtin.help_tags)
+      vim.keymap.set(modes, '<space><space>u', function()
         telescope.extensions.undo.undo {}
       end)
-      vim.keymap.set(modes, '<space>ty', function()
+      vim.keymap.set(modes, '<space><space>y', function()
         telescope.extensions.yank_history.yank_history {}
       end)
     end,
@@ -110,13 +129,10 @@ return {
   },
   {
     'neovim/nvim-lspconfig',
-    dependencies = {
-      { 'folke/neodev.nvim', config = true },
-    },
     keys = {
       { '<space>e', vim.diagnostic.open_float },
-      { '[d',       vim.diagnostic.goto_prev },
-      { ']d',       vim.diagnostic.goto_next },
+      { '[d',       function() vim.diagnostic.jump({ count = -1 }) end },
+      { ']d',       function() vim.diagnostic.jump({ count = 1 }) end },
       { '<space>q', vim.diagnostic.setloclist },
     },
     config = function()
@@ -130,12 +146,12 @@ return {
           vim.keymap.set('n', 'K', vim.lsp.buf.hover, bufopts)
           vim.keymap.set('n', 'gi', vim.lsp.buf.implementation, bufopts)
           vim.keymap.set('n', '<C-k>', vim.lsp.buf.signature_help, bufopts)
-          vim.keymap.set('n', '<space>D', vim.lsp.buf.type_definition, bufopts)
-          vim.keymap.set('n', '<space>rn', vim.lsp.buf.rename, bufopts)
-          vim.keymap.set('n', '<space>ca', vim.lsp.buf.code_action, bufopts)
+          vim.keymap.set('n', '<space>lD', vim.lsp.buf.type_definition, bufopts)
+          vim.keymap.set('n', '<space>lr', vim.lsp.buf.rename, bufopts)
+          vim.keymap.set('n', '<space>la', vim.lsp.buf.code_action, bufopts)
           vim.keymap.set('n', 'gr', vim.lsp.buf.references, bufopts)
-          vim.keymap.set('n', '<space>f', function()
-            vim.lsp.buf.format { async = true }
+          vim.keymap.set({'n', 'v'}, '<space>lf', function()
+            vim.lsp.buf.format {}
           end, bufopts)
           vim.api.nvim_create_user_command('A', 'ClangdSwitchSourceHeader', {})
         end,
@@ -146,49 +162,12 @@ return {
   },
   'ntpeters/vim-better-whitespace',
   {
-    'nvim-treesitter/nvim-treesitter',
-    opts = {
-      ensure_installed = { "lua", "cpp" },
-      highlight = { enable = true },
-    },
-  },
-  {
     'p00f/clangd_extensions.nvim',
     dependencies = { 'neovim/nvim-lspconfig' },
     config = function()
       require 'clangd_extensions.inlay_hints'.setup_autocmd()
       require 'clangd_extensions.inlay_hints'.set_inlay_hints()
     end,
-  },
-  {
-    'gbprod/yanky.nvim',
-    config = function()
-      require 'yanky'.setup()
-      vim.keymap.set({ "n", "x" }, "p", "<Plug>(YankyPutAfter)")
-      vim.keymap.set({ "n", "x" }, "P", "<Plug>(YankyPutBefore)")
-      vim.keymap.set({ "n", "x" }, "gp", "<Plug>(YankyGPutAfter)")
-      vim.keymap.set({ "n", "x" }, "gP", "<Plug>(YankyGPutBefore)")
-      vim.keymap.set("n", "<c-n>", "<Plug>(YankyCycleForward)")
-      vim.keymap.set("n", "<c-m>", "<Plug>(YankyCycleBackward)")
-    end,
-  },
-  {
-    'hrsh7th/nvim-cmp',
-    dependencies = { 'hrsh7th/cmp-nvim-lsp' },
-    config = function()
-      require 'cmp'.setup {
-        mapping = require 'cmp'.mapping.preset.insert {
-          ['<C-b>'] = require 'cmp'.mapping.scroll_docs(-4),
-          ['<C-f>'] = require 'cmp'.mapping.scroll_docs(4),
-          ['<C-Space>'] = require 'cmp'.mapping.complete(),
-          ['<C-e>'] = require 'cmp'.mapping.abort(),
-          ['<CR>'] = require 'cmp'.mapping.confirm({ select = true }),
-        },
-        sources = require 'cmp'.config.sources {
-          { name = 'nvim_lsp' },
-        },
-      }
-    end
   },
   'tpope/vim-abolish',
   'tpope/vim-fugitive',
@@ -197,4 +176,33 @@ return {
     'yazgoo/vmux',
     build = 'cargo install vmux',
   },
+  {
+    'nvim-treesitter/nvim-treesitter',
+    build = ":TSUpdate",
+    config = function()
+      ---@diagnostic disable: missing-fields
+      require("nvim-treesitter.configs").setup({
+        ensure_installed = { 'c', 'lua', 'vim', 'vimdoc' },
+        sync_install = false,
+        highlight = { enable = true, },
+        indent = { enable = true, },
+      })
+    end,
+  },
+  {
+    'gbprod/yanky.nvim',
+    keys = {
+      { "p",     "<Plug>(YankyPutAfter)",      { "n", "x" } },
+      { "P",     "<Plug>(YankyPutBefore)",     { "n", "x" } },
+      { "gp",    "<Plug>(YankyGPutAfter)",     { "n", "x" } },
+      { "gP",    "<Plug>(YankyGPutBefore)",    { "n", "x" } },
+      { "<c-p>", "<Plug>(YankyPreviousEntry)", "n" },
+      { "<c-n>", "<Plug>(YankyNextEntry)",     "n" },
+    },
+    opts = {
+      ring = {
+        update_register_on_cycle = true,
+      },
+    },
+  }
 }

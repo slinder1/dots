@@ -19,11 +19,13 @@
 [pager]
     diff = delta --features ov-diff
     show  = delta --features ov-diff
-    log  = delta --features ov-log
+    log  = delta
 [delta]
     navigate = true
     side-by-side = true
     light = false
+    dark = true
+    syntax-theme = "Monokai Extended"
 [delta "ov-diff"]
     pager=ov -F --section-delimiter '^(commit|added:|removed:|renamed:|Δ)' --section-header --pattern '•'
 [delta "ov-log"]
@@ -57,9 +59,10 @@
     vlv = log --decorate
     # [l]og [g]raph
     vlg = log --decorate --oneline --graph --all
-    # [a]utomatic base following convention <user>/<base>/<feature>
+    # [a]utomatic [b]ase following convention <user>/<base>/<feature>
     vab = "!f() { branch=\"$(git rev-parse --symbolic-full-name HEAD)\"; printf '%s' \"$branch\" | awk -F/ '$1==\"refs\" && $2==\"heads\" && NF==5 { print $4; } $1!=\"refs\" || $2!=\"heads\" || NF!=5 { print \"unknown base branch\" }'; }; f"
-    vat = "!f() { branch=\"$(git rev-parse --symbolic-full-name HEAD)\"; printf '%s' \"$branch\" | awk -F/ '$1==\"refs\" && $2==\"heads\" && NF==5 { print $5; } $1!=\"refs\" || $2!=\"heads\" || NF!=5 { print \"unknown topic branch\" }'; }; f"
+    # [a]utomatic [f]eature following convention <user>/<base>/<feature>
+    vaf = "!f() { branch=\"$(git rev-parse --symbolic-full-name HEAD)\"; printf '%s' \"$branch\" | awk -F/ '$1==\"refs\" && $2==\"heads\" && NF==5 { print $5; } $1!=\"refs\" || $2!=\"heads\" || NF!=5 { print \"unknown topic branch\" }'; }; f"
 
     ## [r]ebase...
     #
@@ -69,10 +72,9 @@
     # [o]nto
     ro = rebase --onto
     # [r]ebase [a]utomatically based on HEAD ref following the convention <user>/<base>/<feature>
-    ra = "!f() { git rebase \"$@\" \"$(git vab)\"; }; f"
+    ra = "!f() { git rebase \"$@\" $(git vab); }; f"
     # [p]ull base, then [r]ebase [a]utomatically based on HEAD ref following the convention <user>/<base>/<feature>
-    pra = "!f() { git sh \"$(git vab)\" && git pull && git sh - && git rebase \"$@\" \"$(git vab)\"; }; f"
-
+    pra = "!f() { git fetch -v $(printf '%s:%s' \"$(git for-each-ref --format='%(upstream:short)' refs/heads/$(git vab) | tr / ' ')\" $(git vab)) && git rebase \"$@\" $(git vab); }; f"
     ## [c]ommit...
     #
     c = commit -vv
@@ -101,17 +103,22 @@
     # Shortcut for deleting current branch and checking out the previous HEAD (git-branch doesn't support the `-` notation for `@{-1}`)
     done = "!f() { git checkout - && git branch -D @{-1}; }; f"
 
-    #
-    push-external-pr = "!f() { git push \"$@\" origin HEAD:\"$(git vat)\"; }; f"
     # Push based on HEAD ref following the convention <user>/<base>/<feature>
     push-amd = "!f() { git push \"$@\" amd HEAD:refs/for/\"$(git vab)\"; }; f"
     # Push a debug info change
     push-dbg = push amd HEAD:refs/for/amd-staging%r=ttye,r=kzhuravl,r=epilking
 
+    # Save a backup of a ref to gerrit based on HEAD ref following
+    # the convention <user>/<base>/<feature>
+    save = "!f() { git push \"$@\" amd HEAD:$USER/saved/$(git rev-parse --abbrev-ref HEAD); }; f"
+    # List all personal branches on gerrit (without an implicit fetch)
+    saved = for-each-ref --format='%(refname:strip=3)' 'refs/remotes/amd/slinder1/**'
+    # Delete remote branches using fzf
+    saved-cleanup = "!f() { git push amd --delete $(git saved | fzf -m); }; f"
+
     push-heterogeneous = "!f() { branch=${1:-HEAD}; remote=amdgh; prefix=refs/heads/amd-feature/heterogeneous-dwarf/; next=$(git ls-remote --refs --heads $remote | gawk 'match($2, prefix \"(.*)\", groups) { if (groups[1] ~ /^[[:digit:]]+$/ && groups[1] > max) max = groups[1]; } END { printf \"%s%03d\\n\", prefix, max + 1; }' prefix=$prefix); git push $remote $branch:$next; git push -f $remote $branch:refs/tags/amd-feature/heterogeneous-dwarf/latest; }; f"
+
 [credential "https://github.com"]
-	helper = 
-	helper = !/home/slinder1/.local/bin/gh auth git-credential
+    helper = !/home/slinder1/.local/bin/gh auth git-credential
 [credential "https://gist.github.com"]
-	helper = 
-	helper = !/home/slinder1/.local/bin/gh auth git-credential
+    helper = !/home/slinder1/.local/bin/gh auth git-credential
