@@ -90,9 +90,21 @@ start_agent() {
   chmod 600 "$SSH_ENV"
   ssh-agent | sed '/^echo/d' >"$SSH_ENV"
   . "$SSH_ENV"
-  ssh-add
 }
-
+sshid-list() {
+  ssh-add -L
+}
+sshid-clear() {
+  ssh-add -D
+}
+sshid-public() {
+  sshid-clear
+  ssh-add ~/.ssh/id_ed25519
+}
+sshid-amdeng() {
+  sshid-clear
+  ssh-add ~/.ssh/id_ed25519_amdeng
+}
 if [ -f ~/.ssh/id_ed25519 ]; then
   if [ -f "$SSH_ENV" ]; then
     . "$SSH_ENV"
