@@ -36,6 +36,10 @@ zstyle ':omz:update' frequency 13
 DISABLE_UNTRACKED_FILES_DIRTY="true"
 
 plugins=(git vi-mode zsh-syntax-highlighting)
+# oh-my-zsh complains that completion directories owned by linuxbrew are not
+# owned by root, and there doesn't seem to be a way to add the linuxbrew user
+# to the "whitelist" so just smash the check with a hammer
+ZSH_DISABLE_COMPFIX=true
 source $ZSH/oh-my-zsh.sh
 
 ((NO_STARSHIP)) || eval "$(starship init zsh)"
@@ -43,6 +47,8 @@ source $ZSH/oh-my-zsh.sh
 autoload -Uz run-help
 (( ${+aliases[run-help]} )) && unalias run-help
 alias help=run-help
+
+bindkey -M viins '^X?' _complete_debug
 
 # User configuration
 
@@ -101,7 +107,7 @@ else
   export SSH_AUTH_SOCK=~/.ssh/ssh_auth_sock
 fi
 
-alias drun='docker run -it --rm --network=host --dns 8.8.8.8 --device=/dev/kfd --device=/dev/dri --group-add video --cap-add=SYS_PTRACE --security-opt seccomp=unconfined -v $HOME:/host -v $SSH_AUTH_SOCK:/ssh-auth-sock -e SSH_AUTH_SOCK=/ssh-auth-sock'
+alias drun='docker run -it --rm --network=host --device=/dev/kfd --device=/dev/dri --group-add video --cap-add=SYS_PTRACE --security-opt seccomp=unconfined -v $HOME:/host -v $SSH_AUTH_SOCK:/ssh-auth-sock -e SSH_AUTH_SOCK=/ssh-auth-sock'
 
 gerrit() {
   local SAVED

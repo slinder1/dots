@@ -158,6 +158,7 @@ return {
       })
       require 'lspconfig'.clangd.setup {}
       require 'lspconfig'.lua_ls.setup {}
+      require 'lspconfig'.rust_analyzer.setup {}
     end,
   },
   'ntpeters/vim-better-whitespace',
