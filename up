@@ -91,10 +91,14 @@ pkg() (
   tar --directory ~/.up/bin --get --gzip --strip-components=1 -f \
     "$(down https://github.com/dandavison/delta/releases/download/0.15.1/delta-0.15.1-x86_64-unknown-linux-musl.tar.gz)" \
     delta-0.15.1-x86_64-unknown-linux-musl/delta
+  # atuin
+  tar --directory ~/.up/bin --get --gzip --strip-components=1 -f \
+    "$(down https://github.com/atuinsh/atuin/releases/download/v18.6.1/atuin-x86_64-unknown-linux-musl.tar.gz)" \
+    atuin-x86_64-unknown-linux-musl/atuin
   # gh
-  tar --directory ~/.up --get --gzip --strip-components=1 -f \
-    "$(down https://github.com/cli/cli/releases/download/v2.34.0/gh_2.34.0_linux_amd64.tar.gz)"
-  rm -f LICENSE
+  #tar --directory ~/.up --get --gzip --strip-components=1 -f \
+  #  "$(down https://github.com/cli/cli/releases/download/v2.34.0/gh_2.34.0_linux_amd64.tar.gz)"
+  #rm -f LICENSE
   # ov
   unzip -qq "$(down https://github.com/noborus/ov/releases/download/v0.34.1/ov_0.34.1_linux_amd64.zip)"
   rm -f LICENSE README.MD ov*.yaml
@@ -116,6 +120,7 @@ all() {
   bin
   pip
   pkg
+  cfg
 }
 
 "$@"

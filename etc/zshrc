@@ -1,12 +1,15 @@
 export ZSH="$HOME/.config/zsh"
 export PATH=$HOME/.up/bin:$HOME/bin:$HOME/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/usr/lib/wsl/lib
+typeset -gaU fpath=($fpath ~/.local/share/zsh/completions)
 [ -d ~/lib ] && export LD_PRELOAD_PATH=~/lib
-[ -f ~/etc/cc.env ] && . ~/etc/cc.env
+#[ -f ~/etc/cc.env ] && . ~/etc/cc.env
 [ -d ~/.cargo ] && . "$HOME/.cargo/env"
 [ -d /home/linuxbrew ] && eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
 
 hash starship &>/dev/null
 NO_STARSHIP=$((?))
+hash atuin &>/dev/null
+NO_ATUIN=$((?))
 
 if ((NO_STARSHIP)); then
 ZSH_THEME="typewritten/typewritten"
@@ -43,6 +46,7 @@ ZSH_DISABLE_COMPFIX=true
 source $ZSH/oh-my-zsh.sh
 
 ((NO_STARSHIP)) || eval "$(starship init zsh)"
+((NO_ATUIN)) || eval "$(atuin init zsh --disable-up-arrow)"
 
 autoload -Uz run-help
 (( ${+aliases[run-help]} )) && unalias run-help

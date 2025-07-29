@@ -159,6 +159,9 @@ return {
       require 'lspconfig'.clangd.setup {}
       require 'lspconfig'.lua_ls.setup {}
       require 'lspconfig'.rust_analyzer.setup {}
+      require 'lspconfig'.tblgen_lsp_server.setup {
+          cmd = { 'tblgen-lsp-server', '--tablegen-compilation-database=tablegen_compile_commands.yml' },
+      }
     end,
   },
   'ntpeters/vim-better-whitespace',
@@ -183,7 +186,7 @@ return {
     config = function()
       ---@diagnostic disable: missing-fields
       require("nvim-treesitter.configs").setup({
-        ensure_installed = { 'c', 'lua', 'vim', 'vimdoc' },
+        ensure_installed = { 'c', 'lua', 'vim', 'vimdoc', 'tablegen' },
         sync_install = false,
         highlight = { enable = true, },
         indent = { enable = true, },

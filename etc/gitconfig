@@ -3,6 +3,8 @@
     name = Scott Linder
 [color]
     ui = auto
+[interactive]
+    singleKey = true
 [rebase]
     autoSquash = true
 [sendemail]
@@ -59,10 +61,19 @@
     vlv = log --decorate
     # [l]og [g]raph
     vlg = log --decorate --oneline --graph --all
-    # [a]utomatic [b]ase following convention <user>/<base>/<feature>
-    vab = "!f() { branch=\"$(git rev-parse --symbolic-full-name HEAD)\"; printf '%s' \"$branch\" | awk -F/ '$1==\"refs\" && $2==\"heads\" && NF==5 { print $4; } $1!=\"refs\" || $2!=\"heads\" || NF!=5 { print \"unknown base branch\" }'; }; f"
-    # [a]utomatic [f]eature following convention <user>/<base>/<feature>
-    vaf = "!f() { branch=\"$(git rev-parse --symbolic-full-name HEAD)\"; printf '%s' \"$branch\" | awk -F/ '$1==\"refs\" && $2==\"heads\" && NF==5 { print $5; } $1!=\"refs\" || $2!=\"heads\" || NF!=5 { print \"unknown topic branch\" }'; }; f"
+    # [b]ranch
+    vb = rev-parse --abbrev-ref HEAD
+    # [a]utomatic [b]ase following convention amd/dev/<user>/<base>/<feature>
+    vab = "!f() { branch=\"$(git rev-parse --symbolic-full-name HEAD)\"; printf '%s' \"$branch\" | awk -F/ '$1==\"refs\" && $2==\"heads\" && NF==7 { print $6; } $1!=\"refs\" || $2!=\"heads\" || NF!=7 { print \"unknown base branch\" }'; }; f"
+    # [a]utomatic [f]eature following convention amd/dev/<user>/<base>/<feature>
+    vaf = "!f() { branch=\"$(git rev-parse --symbolic-full-name HEAD)\"; printf '%s' \"$branch\" | awk -F/ '$1==\"refs\" && $2==\"heads\" && NF==7 { print $7; } $1!=\"refs\" || $2!=\"heads\" || NF!=7 { print \"unknown topic branch\" }'; }; f"
+    # [u]nmerged
+    vu = diff --name-only --diff-filter=U
+
+    ## [f]ormat...
+    # [a]utomatic branch using provided suffix
+    # Prints: amd/dev/<user>/<arg0>
+    fa = "!f() { echo amd/dev/$USER/\"$1\"; }; f"
 
     ## [r]ebase...
     #
@@ -96,27 +107,27 @@
     ## [m]erge[t]ool
     mt = mergetool
 
+    # What main commit is the last one merged into staging?
+    merge-staging-base = merge-base amdeng/main amdeng/amd-staging
     # What patches are in a merge?
-    show-merge = "!f() { git show --stat \"$1^..$1\"; }; f"
+    merge-show = "!f() { git show --stat \"$1^..$1\"; }; f"
     # What merge brings in a specific commit?
-    find-merge = "!sh -c 'commit=$0 && branch=${1:-HEAD} && (git rev-list $commit..$branch --ancestry-path | cat -n; git rev-list $commit..$branch --first-parent | cat -n) | sort -k2 -s | uniq -f1 -d | sort -n | tail -1 | cut -f2'"
+    merge-find = "!sh -c 'commit=$0 && branch=${1:-HEAD} && (git rev-list $commit..$branch --ancestry-path | cat -n; git rev-list $commit..$branch --first-parent | cat -n) | sort -k2 -s | uniq -f1 -d | sort -n | tail -1 | cut -f2'"
     # Shortcut for deleting current branch and checking out the previous HEAD (git-branch doesn't support the `-` notation for `@{-1}`)
     done = "!f() { git checkout - && git branch -D @{-1}; }; f"
 
-    # Push based on HEAD ref following the convention <user>/<base>/<feature>
-    push-amd = "!f() { git push \"$@\" amd HEAD:refs/for/\"$(git vab)\"; }; f"
-    # Push a debug info change
-    push-dbg = push amd HEAD:refs/for/amd-staging%r=ttye,r=kzhuravl,r=epilking
-
     # Save a backup of a ref to gerrit based on HEAD ref following
     # the convention <user>/<base>/<feature>
-    save = "!f() { git push \"$@\" amd HEAD:$USER/saved/$(git rev-parse --abbrev-ref HEAD); }; f"
+    save = "!f() { git push \"$@\" amdeng HEAD:amd/dev/$USER/saved/$(git rev-parse --abbrev-ref HEAD); }; f"
     # List all personal branches on gerrit (without an implicit fetch)
     saved = for-each-ref --format='%(refname:strip=3)' 'refs/remotes/amd/slinder1/**'
     # Delete remote branches using fzf
     saved-cleanup = "!f() { git push amd --delete $(git saved | fzf -m); }; f"
 
-    push-heterogeneous = "!f() { branch=${1:-HEAD}; remote=amdgh; prefix=refs/heads/amd-feature/heterogeneous-dwarf/; next=$(git ls-remote --refs --heads $remote | gawk 'match($2, prefix \"(.*)\", groups) { if (groups[1] ~ /^[[:digit:]]+$/ && groups[1] > max) max = groups[1]; } END { printf \"%s%03d\\n\", prefix, max + 1; }' prefix=$prefix); git push $remote $branch:$next; git push -f $remote $branch:refs/tags/amd-feature/heterogeneous-dwarf/latest; }; f"
+    # subject
+    ascii-subject = "!f() { git rev-list --format=format:%s --no-commit-header --max-count=1 \"$1\" | tr '[:upper:]' '[:lower:]' | sed -E -e 's/\\(#[0-9]+\\)//g' -e \"s/'//g\" -e 's/[^a-z0-9]/ /g' -e 's/^\\s+//' -e 's/\\s+$//' -e 's/\\s+/_/g'; }; f"
+    # github PRs
+    pr-pull = "!f() { git fetch --quiet $1 pull/$2/head:PULL_PR_TEMP && git fetch $1 pull/$2/head:pr/$1/$2_$(git ascii-subject PULL_PR_TEMP) && git branch --quiet -D PULL_PR_TEMP; }; f"
 
 [credential "https://github.com"]
     helper = !/home/slinder1/.local/bin/gh auth git-credential
