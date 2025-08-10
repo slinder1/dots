@@ -11,17 +11,17 @@ usage() {
 }
 (($#)) || usage
 
-function has ( # CMD )
+function has() ( # CMD )
   command -v "$1" >/dev/null 2>&1
 )
 
-function down ( # URL )
+function down() ( # URL )
   mkdir -p ~/.cache/up
   wget -nv -NP ~/.cache/up "$1"
   printf '%s/.cache/up/%s' ~ "${1##*/}"
 )
 
-function git_down ( # URL DIR )
+function git_down() ( # URL DIR )
   if [[ ! -e $2 ]]; then
     git clone "$1" "$2"
   else
@@ -32,13 +32,13 @@ function git_down ( # URL DIR )
 
 # Typically initial setup, or system upgrade, but requires apt-based system
 # and so is not included in "all".
-function apt ( # )
+function apt() ( # )
   sudo apt update -y
   sudo apt upgrade -y
   sudo apt install -y build-essential curl zsh sqlite3 unzip pip
 )
 
-function zsh ( # )
+function zsh() ( # )
   if [[ ! -e ~/.config/zsh ]]; then
     ZSH=~/.config/zsh KEEP_ZSHRC=yes RUNZSH=no sh "$(down https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
     mkdir -p ~/.config/zsh/custom/plugins/
@@ -49,7 +49,7 @@ function zsh ( # )
   git_down https://github.com/zsh-users/zsh-syntax-highlighting.git ~/.config/zsh/custom/plugins/zsh-syntax-highlighting
 )
 
-function etc ( # )
+function etc() ( # )
   cd "$ROOT"/etc
   for name in *; do
     if [[ $name = config ]]; then
@@ -67,7 +67,7 @@ function etc ( # )
   done
 )
 
-function bin ( # )
+function bin() ( # )
   mkdir -p ~/.local/bin
   cd "$ROOT"/bin
   for name in *; do
@@ -75,17 +75,17 @@ function bin ( # )
   done
 )
 
-function pip ( # )
+function pip() ( # )
   pip3 -q install --user --upgrade pip neovim-remote cmake
 )
 
-function pkg ( # )
+function pkg() ( # )
   rm -rf ~/.up
-  mkdir ~/.up
+  mkdir -p ~/.up/bin
   cd ~/.up
   # neovim
   tar --directory ~/.up --get --gzip --strip-components=1 -f \
-    "$(down https://github.com/neovim/neovim/releases/latest/download/nvim-linux-x86_64.tar.gz)"
+    "$(down https://github.com/neovim/neovim-releases/releases/download/v0.11.3/nvim-linux-x86_64.tar.gz)"
   # fzf
   tar --directory ~/.up/bin --get --gzip -f \
     "$(down https://github.com/junegunn/fzf/releases/download/0.38.0/fzf-0.38.0-linux_amd64.tar.gz)"
@@ -127,7 +127,7 @@ function pkg ( # )
   rm -rf clangd_* LICENSE.TXT
 )
 
-function all ( # )
+function all() ( # )
   zsh
   etc
   bin
