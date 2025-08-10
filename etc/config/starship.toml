@@ -1,0 +1,53 @@
+format = """
+$username\
+$hostname\
+$directory\
+$singularity\
+$memory_usage\
+$git_branch\
+$git_commit\
+$git_state\
+$git_metrics\
+$git_status\
+$docker_context\
+$aws\
+$gcloud\
+$openstack\
+$azure\
+$nats\
+$direnv\
+$env_var\
+$crystal\
+$custom\
+$sudo\
+$cmd_duration\
+$line_break\
+$character"""
+right_format = """
+$jobs\
+$battery\
+$time\
+$status\
+$os\
+$container\
+$shell"""
+[username]
+format = '[$user]($style)'
+[hostname]
+ssh_symbol = ''
+format = '@[$hostname]($style)'
+[directory]
+format = ':[$path]($style)'
+[git_branch]
+format = '[ $symbol$branch]($style) '
+truncation_length = 40
+[git_status]
+disabled = true
+[memory_usage]
+style = 'red'
+format = '$symbol [${ram}( |${swap})]($style)'
+disabled = false
+[env_var.CM_CFG]
+style = 'green'
+symbol = ' '
+format = '[$symbol$env_value]($style) '

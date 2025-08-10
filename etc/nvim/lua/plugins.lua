@@ -156,23 +156,21 @@ return {
           vim.api.nvim_create_user_command('A', 'ClangdSwitchSourceHeader', {})
         end,
       })
-      require 'lspconfig'.clangd.setup {}
-      require 'lspconfig'.lua_ls.setup {}
-      require 'lspconfig'.rust_analyzer.setup {}
-      require 'lspconfig'.tblgen_lsp_server.setup {
+      vim.lsp.inlay_hint.enable()
+      vim.lsp.enable('clangd')
+      vim.lsp.enable('lua_ls')
+      vim.lsp.enable('rust_analyzer')
+      vim.lsp.config('tblgen_lsp_server', {
           cmd = { 'tblgen-lsp-server', '--tablegen-compilation-database=tablegen_compile_commands.yml' },
-      }
+      })
     end,
   },
-  'ntpeters/vim-better-whitespace',
   {
     'p00f/clangd_extensions.nvim',
     dependencies = { 'neovim/nvim-lspconfig' },
-    config = function()
-      require 'clangd_extensions.inlay_hints'.setup_autocmd()
-      require 'clangd_extensions.inlay_hints'.set_inlay_hints()
-    end,
+    opts = {},
   },
+  'ntpeters/vim-better-whitespace',
   'tpope/vim-abolish',
   'tpope/vim-fugitive',
   'tpope/vim-sleuth',
