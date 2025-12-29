@@ -1,0 +1,67 @@
+#!/usr/bin/env -S uv run --script
+# /// script
+# requires-python = ">=3.12"
+# dependencies = ['pynvim', 'psutil', 'setuptools']
+# ///
+
+# Written with https://github.com/mhinz/neovim-remote as a reference,
+# to fill the gap until nvim learns something equivalent to --remote-wait
+
+from os import execvp, environ
+from sys import argv, stderr, exit
+from dataclasses import dataclass
+import pynvim
+
+@dataclass
+class RemoteState:
+    exitcode: int = 0
+    buffers: int = 0
+
+def remote_edit(sock, args) -> int:
+    wait = False
+    if args[0] == "--wait":
+        wait = True
+        args = args[1:]
+    state = RemoteState()
+    with pynvim.attach("socket", path=sock) as nvim:
+        for path in args:
+            escaped = nvim.funcs.fnameescape(path)
+            nvim.command(f"edit {escaped}")
+            nvim.command("augroup vclosenotif")
+            nvim.command(f'autocmd BufDelete <buffer> silent! call rpcnotify({nvim.channel_id}, "BufDelete")')
+            nvim.command(f'autocmd VimLeave * if exists("v:exiting") && v:exiting > 0 | silent! call rpcnotify({nvim.channel_id}, "Exit", v:exiting) | endif')
+            nvim.command("augroup END")
+            state.buffers += 1
+        if wait:
+            def on_notify(event, args):
+                match event:
+                    case "BufDelete":
+                        state.exitcode += args[0] if args else 0
+                        state.buffers -= 1
+                        if state.buffers == 0:
+                            nvim.stop_loop()
+                    case "Exit":
+                        nvim.stop_loop()
+                        state.exitcode += args[0]
+            def on_error(error):
+                state.exitcode += 1
+                print(error, file=stderr)
+                nvim.stop_loop()
+            nvim.run_loop(None, on_notify, None, on_error)
+    return state.exitcode
+
+
+def main() -> None:
+    nested = "NVIM" in environ and environ["NVIM"]
+    args = argv[1:]
+    if not args:
+        if nested:
+            print("error: refusing to nest (hint: unset NVIM and try again)", file=stderr)
+            exit(1)
+        execvp("nvim", ["nvim", "+term", "+starti"])
+    if nested:
+        exit(remote_edit(environ["NVIM"], args))
+    execvp("nvim", ["nvim"] + args)
+
+if __name__ == "__main__":
+    main()

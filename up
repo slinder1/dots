@@ -11,45 +11,14 @@ usage() {
 }
 (($#)) || usage
 
-function has() ( # CMD )
-  command -v "$1" >/dev/null 2>&1
-)
-
-function down() ( # URL )
-  mkdir -p ~/.cache/up
-  wget -nv -NP ~/.cache/up "$1"
-  printf '%s/.cache/up/%s' ~ "${1##*/}"
-)
-
-function git_down() ( # URL DIR )
-  if [[ ! -e $2 ]]; then
-    git clone "$1" "$2"
-  else
-    git -C "$2" pull
-  fi
-)
-
-
 # Typically initial setup, or system upgrade, but requires apt-based system
 # and so is not included in "all".
 function apt() ( # )
-  sudo apt update -y
-  sudo apt upgrade -y
-  sudo apt install -y build-essential curl zsh sqlite3 unzip pip
-)
-
-function zsh() ( # )
-  if [[ ! -e ~/.config/zsh ]]; then
-    ZSH=~/.config/zsh KEEP_ZSHRC=yes RUNZSH=no sh "$(down https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
-    mkdir -p ~/.config/zsh/custom/plugins/
-  elif [[ -v ZSH ]]; then
-    "$ZSH/tools/upgrade.sh"
-  fi
-  git_down https://github.com/reobin/typewritten ~/.config/zsh/custom/typewritten
-  git_down https://github.com/zsh-users/zsh-syntax-highlighting.git ~/.config/zsh/custom/plugins/zsh-syntax-highlighting
+  sudo apt-get install -y curl
 )
 
 function etc() ( # )
+  mkdir -p ~/.config
   cd "$ROOT"/etc
   for name in *; do
     if [[ $name = config ]]; then
@@ -75,67 +44,24 @@ function bin() ( # )
   done
 )
 
-function pip() ( # )
-  pip3 -q install --user --upgrade pip neovim-remote cmake
+function mise() ( # )
+  if [[ -f ~/.local/bin/mise ]]; then
+    ~/.local/bin/mise self-update -y
+  else
+    curl -sSL https://mise.run | sh
+  fi
+  eval "$(~/.local/bin/mise activate bash)"
+  mise install --cd ~
 )
 
-function pkg() ( # )
-  rm -rf ~/.up
-  mkdir -p ~/.up/bin
-  cd ~/.up
-  # neovim
-  tar --directory ~/.up --get --gzip --strip-components=1 -f \
-    "$(down https://github.com/neovim/neovim-releases/releases/download/v0.11.3/nvim-linux-x86_64.tar.gz)"
-  # fzf
-  tar --directory ~/.up/bin --get --gzip -f \
-    "$(down https://github.com/junegunn/fzf/releases/download/0.38.0/fzf-0.38.0-linux_amd64.tar.gz)"
-  # rg
-  tar --directory ~/.up/bin --get --gzip --strip-components=1 -f \
-    "$(down https://github.com/BurntSushi/ripgrep/releases/download/13.0.0/ripgrep-13.0.0-x86_64-unknown-linux-musl.tar.gz)" \
-    ripgrep-13.0.0-x86_64-unknown-linux-musl/rg
-  # fd
-  tar --directory ~/.up/bin --get --gzip --strip-components=1 -f \
-    "$(down https://github.com/sharkdp/fd/releases/download/v8.7.0/fd-v8.7.0-x86_64-unknown-linux-musl.tar.gz)" \
-    fd-v8.7.0-x86_64-unknown-linux-musl/fd
-  # delta
-  tar --directory ~/.up/bin --get --gzip --strip-components=1 -f \
-    "$(down https://github.com/dandavison/delta/releases/download/0.15.1/delta-0.15.1-x86_64-unknown-linux-musl.tar.gz)" \
-    delta-0.15.1-x86_64-unknown-linux-musl/delta
-  # atuin
-  tar --directory ~/.up/bin --get --gzip --strip-components=1 -f \
-    "$(down https://github.com/atuinsh/atuin/releases/download/v18.6.1/atuin-x86_64-unknown-linux-musl.tar.gz)" \
-    atuin-x86_64-unknown-linux-musl/atuin
-  # starship
-  tar --directory ~/.up/bin --get --gzip -f \
-    "$(down https://github.com/starship/starship/releases/download/v1.23.0/starship-x86_64-unknown-linux-musl.tar.gz)"
-  # gh
-  #tar --directory ~/.up --get --gzip --strip-components=1 -f \
-  #  "$(down https://github.com/cli/cli/releases/download/v2.34.0/gh_2.34.0_linux_amd64.tar.gz)"
-  #rm -f LICENSE
-  # ov
-  unzip -qq "$(down https://github.com/noborus/ov/releases/download/v0.34.1/ov_0.34.1_linux_amd64.zip)"
-  rm -f LICENSE README.MD ov*.yaml
-  rsync -a ov bin/
-  # lua-language-server
-  mkdir lua-language-server
-  tar --directory lua-language-server --get --gzip -f \
-    "$(down https://github.com/LuaLS/lua-language-server/releases/download/3.7.1/lua-language-server-3.7.1-linux-x64.tar.gz)"
-  ln -s "$PWD"/lua-language-server/bin/lua-language-server bin/
-  # clangd
-  unzip -qq "$(down https://github.com/clangd/clangd/releases/download/15.0.6/clangd-linux-15.0.6.zip)"
-  rsync -a clangd_*/ .
-  rm -rf clangd_* LICENSE.TXT
-  # rr
-  tar --directory ~/.up --get --gzip --strip-components=1 -f \
-    "$(down https://github.com/rr-debugger/rr/releases/download/5.9.0/rr-5.9.0-Linux-x86_64.tar.gz)"
+function mise-bump() ( # )
+  mise upgrade --cd ~ --bump
 )
 
 function all() ( # )
-  zsh
   etc
   bin
-  pip
-  pkg
+  mise
 )
 
 "$@"

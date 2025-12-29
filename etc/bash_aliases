@@ -5,70 +5,50 @@
 # ~/.bash_profile) and interactive shells (i.e. ~/.bashrc) includes this file,
 # directly or indirectly. This seems to be the case for e.g. modern Ubuntu.
 
-# Some arcane garbage that has the effect of "synchronizing" history between
-# all instances of bash via ~/.bash_history, while also avoiding polluting
-# it with useless/duplicate commands. See bash(1), `help history`, and
-# https://unix.stackexchange.com/questions/18212#answer-18443 for details. Not
-# entirely convinced this actually works, but it is better than nothing.
+hash starship >/dev/null 2>&1
+readonly NO_STARSHIP=$?
+hash atuin >/dev/null 2>&1
+readonly NO_ATUIN=$?
 
-# Append to the history file, don't overwrite it.
-shopt -s histappend
-# Don't save duplicate lines or lines starting with space.
-HISTCONTROL=ignoreboth:erasedups
-# Never truncate history.
-HISTSIZE=-1
-HISTFILESIZE=-1
-[ -d /host ] && HISTFILE=/host/bash_history
-# Ignore commands which pollute history.
-HISTIGNORE='ls:l:ll:cd:pwd:bg:fg:history'
-# Fuss about with the history file: read-append, write-dedup, clear, read
-PROMPT_COMMAND="history -n; history -w; history -c; history -r; $PROMPT_COMMAND"
-
-tmux-refresh-ssh-env() {
-  eval "$(tmux show-env -s | grep '^SSH_')"
-}
-SSH_ENV=~/.ssh/env
-start_agent() {
+readonly SSH_ENV=~/.ssh/env
+sshid-start-agent() {
   touch "$SSH_ENV"
   chmod 600 "$SSH_ENV"
   ssh-agent | sed '/^echo/d' >"$SSH_ENV"
   . "$SSH_ENV"
-  ssh-add
 }
-
-if [ -f ~/.ssh/id_ed25519 ]; then
-  if [ -f "$SSH_ENV" ]; then
-    . "$SSH_ENV"
-    ps "$SSH_AGENT_PID" | grep -q ssh-agent || start_agent
+sshid-list() {
+  ssh-add -L
+}
+sshid-clear() {
+  ssh-add -D
+}
+sshid-public() {
+  sshid-clear
+  ssh-add ~/.ssh/id_ed25519
+}
+sshid-amdeng() {
+  sshid-clear
+  ssh-add ~/.ssh/id_ed25519_amdeng
+}
+sshid-init() {
+  if [ -f ~/.ssh/id_ed25519 ]; then
+    if [ -f "$SSH_ENV" ]; then
+      . "$SSH_ENV"
+      ps "$SSH_AGENT_PID" | grep -q ssh-agent || sshid-start-agent
+    else
+      sshid-start-agent
+    fi
   else
-    start_agent
-  fi
-else
-  if [[ -S "$SSH_AUTH_SOCK" && ! -L "$SSH_AUTH_SOCK" ]]; then
-    ln -sf "$SSH_AUTH_SOCK" ~/.ssh/ssh_auth_sock
-  fi
-  export SSH_AUTH_SOCK=~/.ssh/ssh_auth_sock
-fi
-
-GIT_PS1_SHOWCOLORHINTS=1
-extra_git_ps1() {
-  local FORMAT="$1"
-  local GIT_DIR
-  GIT_DIR=$(git rev-parse --git-common-dir 2>/dev/null)
-  if [[ -n $GIT_DIR && -x $GIT_DIR/hooks/commit-msg &&
-      $(git config --local --bool --get gerrit.createChangeId) != false ]]; then
-    printf "$FORMAT" "g"
+    if [[ -S "$SSH_AUTH_SOCK" && ! -L "$SSH_AUTH_SOCK" ]]; then
+      ln -sf "$SSH_AUTH_SOCK" ~/.ssh/ssh_auth_sock
+    fi
+    export SSH_AUTH_SOCK=~/.ssh/ssh_auth_sock
   fi
 }
-extra_cm_ps1() {
-  local FORMAT="$1"
-  if [[ -n $CM_CFG ]]; then
-    printf "$FORMAT" "$CM_CFG"
-  fi
-}
-PS1='\n${debian_chroot:+($debian_chroot)}\[\033[01;32m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\n$ '
+sshid-init
 
-export EDITOR='nvr -s --remote-wait'
+export EDITOR='v --wait'
 export GIT_EDITOR=$EDITOR
 export SVN_EDITOR=$EDITOR
 
@@ -82,110 +62,13 @@ mosh-kill() {
   ps xo comm,pid --sort etime --no-header | awk '$1~/^mosh-server$/ { if (old) print $2; else old=1; }' | xargs -r kill
 }
 
-v() {
-  if [ $# -gt 0 ]; then
-    if [ -n "$NVIM" ]; then
-      nvr --servername "$NVIM" --nostart "$@"
-    else
-      nvim "$@"
-    fi
-  else
-    if [ -n "$NVIM" ]; then
-      printf "unset NVIM and try again\n" >&2
-      return 1
-    fi
-    nvim +term +starti
-  fi
-}
-alias sp='nvr -o'
-alias vsp='nvr -O'
-alias tabe='nvr -p'
-alias vd='nvr -d'
-alias vp='nvr -l'
-alias f=fd
-alias b=bat
-alias n=ninja
 alias g=git
 if [ -f /usr/share/bash-completion/completions/git ]; then
   . /usr/share/bash-completion/completions/git
   __git_complete g __git_main
 fi
 alias a='tput bel'
-gerrit() {
-  local SAVED
-  SAVED="$(git config --local --bool --get gerrit.createChangeId)"
-  if [[ $# -eq 0 ]]; then
-    if [[ "$SAVED" == false ]]; then
-      git config --local --bool gerrit.createChangeId true
-    else
-      git config --local --bool gerrit.createChangeId false
-    fi
-  else
-    git config --local --bool gerrit.createChangeId true
-    "$@"
-    git config --local --bool gerrit.createChangeId "$SAVED"
-  fi
-}
-gerrit-msg() {
-  python3 -c 'import sys; from urllib.parse import quote_plus; print(quote_plus(sys.stdin.readline().strip()))'
-}
-
-# Phabricator/arc try to be too clever, which would be nice if they failed
-# less frequently. There also seems to be a lot of gotchas in the command-line
-# workflow which do not seem to have been thought of upstream. Build a
-# new set of primitives that "always work".
-
-# If phab-pull fails we are left fending for ourselves to try to reconstruct
-# the canonical commit message for a revision. Also, if the remote revision
-# is updated by anyone else (i.e. they add themselves as a reviewer, or they
-# add a tag) we may overwrite it accidentally if we fail to pull down the
-# message before pushing. Add a simple way to fetch it.
-# TODO: Automatically try to merge the upstream version and the local version
-# before pushing.
-phab-msg() {
-  if [ $# -gt 1 ]; then
-    printf "usage: phab-msg [revision-id]\n" >&2
-    return 1
-  fi
-  local REV_ID
-  if [ $# -eq 1 ]; then
-    REV_ID=$(printf "%s" "$1" | sed 's/^D\([0-9]\+\)$/\1/')
-  else
-    REV_ID=$(git rev-list --format=%B --max-count=1 HEAD \
-      | sed -n 's/Differential Revision: .*\/D\([0-9]\+\)/\1/p')
-  fi
-  printf '{ "revision_id": "%s" }' "$REV_ID" \
-    | arc call-conduit differential.getcommitmessage -- \
-    | jq -r '.["response"]'
-}
-phab-pull() {
-  arc patch --skip-dependencies --nobranch "$@"
-}
-phab-push() {
-  arc diff --edit --verbatim HEAD^ && phab-msg | git commit --amend -F-
-}
-phab-land() (
-  set -eou pipefail
-  git branch phab-land ||:
-  git checkout phab-land
-  git fetch origin main
-  git reset --hard origin/main
-  for phab in "$@"; do
-    phab-pull "$phab"
-    cm l -ga
-  done
-  while true; do
-    git fetch origin main
-    git rebase origin/main
-    git push origin HEAD:main && break || sleep 10
-  done
-)
-
 alias drun='docker run -it --rm --network=host --dns 8.8.8.8 --device=/dev/kfd --device=/dev/dri --group-add video --cap-add=SYS_PTRACE --security-opt seccomp=unconfined -v $HOME:/dockerx -v $SSH_AUTH_SOCK:/ssh-auth-sock -e SSH_AUTH_SOCK=/ssh-auth-sock'
-
-windows() {
-  sudo grub-reboot "$(grep -i windows /boot/grub/grub.cfg | cut -d\' -f2 | head -1)" && sudo reboot
-}
 
 c() {
   local SOURCE=''
@@ -209,23 +92,5 @@ hip() {
   [[ $# -gt 0 ]] && { SOURCE="$1"; shift; }
   printf '%s' "$SOURCE" | clang -x hip --cuda-device-only - -O0 -S -o - --cuda-gpu-arch=gfx900 "$@" 2>&1 | sed '/\t\.ident/d'
 }
-
-cr() {
-  local runspec="$1"; shift
-  local build_dir="${runspec%%/*}"
-  [[ $runspec != $build_dir ]] || build_dir=release
-  local command="${runspec##*/}"
-  [[ -n $command ]] || command=check-all
-  local args=(cmake --build "$build_dir")
-  [[ $command =~ ^(llvm-lit)$ ]] || args+=(-- "$command")
-  (set -x; "${args[@]}") \
-    && [[ -x "$build_dir/bin/$command" ]] \
-    && (set -x; "$build_dir/bin/$command" "$@")
-}
-
-[ -d ~/lib ] && export LD_PRELOAD_PATH=~/lib
-[ -d ~/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/bin/ ] && export PATH=~/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/bin/:"$PATH"
-[ -d ~/vendor/arcanist/bin ] && export PATH=~/vendor/arcanist/bin:"$PATH"
-[ -f ~/etc/cc.env ] && . ~/etc/cc.env
 
 export PATH="${PATH%%:/mnt/c*}"
