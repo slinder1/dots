@@ -81,6 +81,11 @@ v() {
     nvim +term +starti
   fi
 }
+vpound() {
+  if [ -n "$NVIM" ]; then
+    nvr --servername "$NVIM" --nostart --remote-expr "bufname(winbufnr(winnr('#')))"
+  fi
+}
 alias sp='nvr -o'
 alias vsp='nvr -O'
 alias tabe='nvr -p'

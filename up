@@ -125,6 +125,9 @@ function pkg() ( # )
   unzip -qq "$(down https://github.com/clangd/clangd/releases/download/15.0.6/clangd-linux-15.0.6.zip)"
   rsync -a clangd_*/ .
   rm -rf clangd_* LICENSE.TXT
+  # rr
+  tar --directory ~/.up --get --gzip --strip-components=1 -f \
+    "$(down https://github.com/rr-debugger/rr/releases/download/5.9.0/rr-5.9.0-Linux-x86_64.tar.gz)"
 )
 
 function all() ( # )

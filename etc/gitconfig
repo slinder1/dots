@@ -69,6 +69,8 @@
     vaf = "!f() { branch=\"$(git rev-parse --symbolic-full-name HEAD)\"; printf '%s' \"$branch\" | awk -F/ '$1==\"refs\" && $2==\"heads\" && NF==7 { print $7; } $1!=\"refs\" || $2!=\"heads\" || NF!=7 { print \"unknown topic branch\" }'; }; f"
     # [u]nmerged
     vu = diff --name-only --diff-filter=U
+    # [d]iff [f]iltered
+    vdf = "!f() { git diff --name-only --diff-filter=\"$(printf '%s' \"$1\" | tr '[:lower:]' '[:upper:]')\"; }; f"
 
     ## [f]ormat...
     # [a]utomatic branch using provided suffix

@@ -6,7 +6,7 @@ return {
       vim.o.termguicolors = true
       vim.g.sonokai_style = 'default'
       vim.g.sonokai_better_performance = 1
-      vim.g.sonokai_dim_inactive_windows = 1
+      vim.g.sonokai_dim_inactive_windows = 0
       vim.g.sonokai_diagnostic_virtual_text = 'colored'
       vim.cmd.colorscheme('sonokai')
     end,
@@ -57,12 +57,15 @@ return {
       'debugloop/telescope-undo.nvim',
       { 'nvim-telescope/telescope-fzf-native.nvim', build = 'make', },
       'gbprod/yanky.nvim',
+      'pfdzm/graphite-picker',
     },
     config = function()
       local telescope = require 'telescope'
       local actions = require 'telescope.actions'
       local action_state = require 'telescope.actions.state'
       local builtin = require 'telescope.builtin'
+      local sorters = require 'telescope.sorters'
+      local conf = require 'telescope.config'
       telescope.setup {
         defaults = {
           mappings = {
@@ -87,11 +90,15 @@ return {
             ignore_current_buffer = true,
             sort_mru = true,
           },
+          git_commits = {
+            git_command = { "git", "log", "-16", "--pretty=oneline", "--decorate" },
+            sorter = sorters.fuzzy_with_index_bias {},
+          },
         },
       }
       -- Lazy loading would make find_pickers essentially useless until
       -- the extensions are activated by some other means, so load eagerly
-      for _, ext in ipairs({ 'find_pickers', 'undo', 'fzf', 'yank_history' }) do
+      for _, ext in ipairs({ 'find_pickers', 'undo', 'fzf', 'yank_history', 'graphite_picker' }) do
         telescope.load_extension(ext)
       end
       vim.cmd.cnoreabbrev('T', 'Telescope')
@@ -117,7 +124,6 @@ return {
     'moll/vim-bbye',
     keys = {
       { '<space>d',  ':Bdelete<cr>' },
-      { '<space>wd', ':close<cr>' },
     },
     config = function()
       vim.api.nvim_create_user_command('Bd', 'Bdelete<bang>', {
@@ -130,10 +136,12 @@ return {
   {
     'neovim/nvim-lspconfig',
     keys = {
-      { '<space>e', vim.diagnostic.open_float },
       { '[d',       function() vim.diagnostic.jump({ count = -1 }) end },
       { ']d',       function() vim.diagnostic.jump({ count = 1 }) end },
-      { '<space>q', vim.diagnostic.setloclist },
+      { '[e',       function() vim.diagnostic.jump({ count = -1, severity = vim.diagnostic.severity.ERROR }) end },
+      { ']e',       function() vim.diagnostic.jump({ count = 1, severity = vim.diagnostic.severity.ERROR }) end },
+      { '<space>e', vim.diagnostic.open_float },
+      { '<space>le', vim.diagnostic.setloclist },
     },
     config = function()
       vim.api.nvim_create_autocmd('LspAttach', {
@@ -152,6 +160,10 @@ return {
           vim.keymap.set('n', 'gr', vim.lsp.buf.references, bufopts)
           vim.keymap.set({'n', 'v'}, '<space>lf', function()
             vim.lsp.buf.format {}
+          end, bufopts)
+          vim.keymap.set({'n', 'v'}, '<space>li', function()
+            local opts = { bufnr = 0 }
+            vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled(opts), opts)
           end, bufopts)
           vim.api.nvim_create_user_command('A', 'ClangdSwitchSourceHeader', {})
         end,
@@ -173,7 +185,9 @@ return {
   'ntpeters/vim-better-whitespace',
   'tpope/vim-abolish',
   'tpope/vim-fugitive',
-  'tpope/vim-sleuth',
+  {
+    'tpope/vim-sleuth',
+  },
   {
     'yazgoo/vmux',
     build = 'cargo install vmux',
@@ -209,7 +223,6 @@ return {
   },
   {
     'ggandor/leap.nvim',
-    lazy = false,
     config = function ()
       require('leap').set_default_mappings()
       require('leap').opts.preview_filter =
@@ -223,5 +236,13 @@ return {
       require('leap').opts.safe_labels = {}
       require('leap').opts.labels = 'hjklhgfdsaqwerpoizxcv/.,mn'
     end,
-  }
+  },
+  {
+    "NeogitOrg/neogit",
+    dependencies = {
+      "nvim-lua/plenary.nvim",
+      "sindrets/diffview.nvim",
+      "nvim-telescope/telescope.nvim",
+    },
+  },
 }
