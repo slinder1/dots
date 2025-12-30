@@ -8,6 +8,7 @@
 # to fill the gap until nvim learns something equivalent to --remote-wait
 
 from os import execvp, environ
+from os.path import abspath
 from sys import argv, stderr, exit
 from dataclasses import dataclass
 import pynvim
@@ -25,7 +26,7 @@ def remote_edit(sock, args) -> int:
     state = RemoteState()
     with pynvim.attach("socket", path=sock) as nvim:
         for path in args:
-            escaped = nvim.funcs.fnameescape(path)
+            escaped = nvim.funcs.fnameescape(abspath(path))
             nvim.command(f"edit {escaped}")
             nvim.command("augroup vclosenotif")
             nvim.command(f'autocmd BufDelete <buffer> silent! call rpcnotify({nvim.channel_id}, "BufDelete")')

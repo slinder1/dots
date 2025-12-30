@@ -58,10 +58,17 @@ function mise-bump() ( # )
   mise upgrade --cd ~ --bump
 )
 
+function bash-preexec() ( # )
+  curl -sSL https://github.com/rcaloras/bash-preexec/archive/refs/tags/0.6.0.tar.gz \
+    | tar --directory ~ --get --gzip --strip-components=1 -f - bash-preexec-0.6.0/bash-preexec.sh
+  mv ~/{,.}bash-preexec.sh
+)
+
 function all() ( # )
   etc
   bin
   mise
+  bash-preexec
 )
 
 "$@"

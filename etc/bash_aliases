@@ -5,10 +5,13 @@
 # ~/.bash_profile) and interactive shells (i.e. ~/.bashrc) includes this file,
 # directly or indirectly. This seems to be the case for e.g. modern Ubuntu.
 
-hash starship >/dev/null 2>&1
-readonly NO_STARSHIP=$?
-hash atuin >/dev/null 2>&1
-readonly NO_ATUIN=$?
+[[ -x ~/.local/bin/mise ]] && eval "$(~/.local/bin/mise activate bash)"
+hash starship >/dev/null 2>&1 && eval "$(starship init bash)"
+if hash atuin >/dev/null 2>&1 && [[ -f ~/.bash-preexec.sh ]]; then
+  unset HISTFILE
+  source ~/.bash-preexec.sh
+  eval "$(atuin init bash --disable-up-arrow)"
+fi
 
 readonly SSH_ENV=~/.ssh/env
 sshid-start-agent() {

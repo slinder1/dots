@@ -1,5 +1,7 @@
 [tools]
 "aqua:atuin" = "18.10.0"
+"aqua:bat" = "0.26.1"
+"aqua:cmake" = "4.2.1"
 "aqua:delta" = "0.18.1"
 "aqua:fd" = "10.3.0"
 "aqua:fzf" = "0.67.0"
