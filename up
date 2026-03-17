@@ -1,15 +1,14 @@
-#!/bin/bash
+#!/bin/sh
 
-ROOT="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"
+ROOT="$(dirname "$(readlink -f "$0")")"
 readonly ROOT
 
--() { exit 1; }
 usage() {
-  printf 'Usage: %s command [args...]\nAvailable Commands:\n' "$0" >&2
+  printf 'Usage: %s command...\nAvailable Commands:\n' "$0" >&2
   sed -ne 's/^function \(.*\)/\1/p' "$0" >&2
-  -
+  exit 1
 }
-(($#)) || usage
+[ $# -gt 0 ] || usage
 
 # Typically initial setup, or system upgrade, but requires apt-based system
 # and so is not included in "all".
@@ -17,14 +16,27 @@ function apt() ( # )
   sudo apt-get install -y curl
 )
 
+function lix() ( # )
+  curl -sSf -L https://install.lix.systems/lix | sh -s -- install
+)
+
+function darwin() ( # )
+  [ -e /etc/nix-darwin ] || sudo ln -s "$ROOT/nix" /etc/nix-darwin
+  sudo nix --experimental-features 'flakes nix-command' run nix-darwin/nix-darwin-25.11#darwin-rebuild -- switch
+)
+
+function home() ( # )
+  nix --experimental-features 'flakes nix-command' run nixpkgs#home-manager -- switch --flake "$ROOT/nix#$USER"
+)
+
 function etc() ( # )
   mkdir -p ~/.config
   cd "$ROOT"/etc
   for name in *; do
-    if [[ $name = config ]]; then
+    if [ "$name" = config ]; then
       continue
     fi
-    if [[ -d $name ]]; then
+    if [ -d "$name" ]; then
       ln -sf "$ROOT"/etc/"$name" ~/.config
     else
       ln -sf "$ROOT"/etc/"$name" ~/."$name"
@@ -48,7 +60,7 @@ function bob() ( # )
   "$(which bob)" use 0.11.5
 )
 
-function bash-preexec() ( # )
+function bash_preexec() ( # )
   curl -sSL https://github.com/rcaloras/bash-preexec/archive/refs/tags/0.6.0.tar.gz \
     | tar -C ~ -xzf - --strip-components=1 bash-preexec-0.6.0/bash-preexec.sh
   mv ~/{,.}bash-preexec.sh
@@ -58,7 +70,22 @@ function all() ( # )
   etc
   bin
   bob
-  bash-preexec
+  bash_preexec
 )
 
-"$@"
+function all_darwin() ( # )
+  all
+  darwin
+  home
+)
+
+for cmd in "$@"; do
+  if [ "$(type -t "$cmd")" != "function" ]; then
+    printf 'Error: Unknown command `%s`\n\n' "$cmd" >&2
+    usage
+  fi
+done
+
+for cmd in "$@"; do
+  "$cmd"
+done
