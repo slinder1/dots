@@ -1,0 +1,64 @@
+#!/bin/bash
+
+ROOT="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"
+readonly ROOT
+
+-() { exit 1; }
+usage() {
+  printf 'Usage: %s command [args...]\nAvailable Commands:\n' "$0" >&2
+  sed -ne 's/^function \(.*\)/\1/p' "$0" >&2
+  -
+}
+(($#)) || usage
+
+# Typically initial setup, or system upgrade, but requires apt-based system
+# and so is not included in "all".
+function apt() ( # )
+  sudo apt-get install -y curl
+)
+
+function etc() ( # )
+  mkdir -p ~/.config
+  cd "$ROOT"/etc
+  for name in *; do
+    if [[ $name = config ]]; then
+      continue
+    fi
+    if [[ -d $name ]]; then
+      ln -sf "$ROOT"/etc/"$name" ~/.config
+    else
+      ln -sf "$ROOT"/etc/"$name" ~/."$name"
+    fi
+  done
+  cd "$ROOT"/etc/config
+  for name in *; do
+      ln -sf "$ROOT"/etc/config/"$name" ~/.config
+  done
+)
+
+function bin() ( # )
+  mkdir -p ~/.local/bin
+  cd "$ROOT"/bin
+  for name in *; do
+    ln -sf "$ROOT"/bin/"$name" ~/.local/bin/"$name"
+  done
+)
+
+function bob() ( # )
+  "$(which bob)" use 0.11.5
+)
+
+function bash-preexec() ( # )
+  curl -sSL https://github.com/rcaloras/bash-preexec/archive/refs/tags/0.6.0.tar.gz \
+    | tar -C ~ -xzf - --strip-components=1 bash-preexec-0.6.0/bash-preexec.sh
+  mv ~/{,.}bash-preexec.sh
+)
+
+function all() ( # )
+  etc
+  bin
+  bob
+  bash-preexec
+)
+
+"$@"

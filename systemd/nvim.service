@@ -1,0 +1,9 @@
+[Unit]
+Description=Neovim
+
+[Service]
+ExecStartPre=/usr/bin/rm -f %h/.local/state/nvim.sock
+ExecStart=%h/.local/share/bob/nvim-bin/nvim --listen %h/.local/state/nvim.sock --headless
+
+[Install]
+WantedBy=default.target

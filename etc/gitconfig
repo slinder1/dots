@@ -1,0 +1,161 @@
+[user]
+    email = Scott.Linder@amd.com
+    name = Scott Linder
+[color]
+    ui = auto
+[interactive]
+    singleKey = true
+[rebase]
+    autoSquash = true
+[rerere]
+    enabled = true
+[sendemail]
+    smtpEncryption = plain
+    smtpServer = mail.gandi.net
+    smtpUser = scott@scottlinder.com
+    smtpServerPort = 587
+[pull]
+    ff = only
+[commit]
+    verbose = true
+[core]
+    pager = delta --pager='ov -F'
+[pager]
+    diff = delta --features ov-diff
+    show  = delta --features ov-diff
+    log  = delta
+[delta]
+    navigate = true
+    side-by-side = true
+    light = false
+    dark = true
+    syntax-theme = "Monokai Extended"
+[delta "ov-diff"]
+    pager=ov -F --section-delimiter '^(commit|added:|removed:|renamed:|Δ)' --section-header --pattern '•'
+[delta "ov-log"]
+    pager=ov -F --section-delimiter '^commit' --section-header-num 3
+[merge]
+    conflictstyle = diff3
+    tool = nvrdiff
+[mergetool "nvrdiff"]
+    cmd = nvr --servername $NVIM -d $LOCAL $BASE $REMOTE $MERGED -c 'wincmd J | wincmd = | norm ]c[c'
+[alias]
+    ## [s]et...
+    # [H]EAD
+    sh = switch
+    # [H]EAD detached
+    shd = switch --detach
+    # HEAD [r]ef's head
+    sr = reset
+    # [f]ile contents
+    sf = restore
+
+    ## [v]iew...
+    # [s]tatus
+    vs = status
+    # [d]iff
+    vd = diff --no-prefix
+    # [o]bject
+    vo = show --no-prefix
+    # [l]og
+    vl = log --decorate --oneline
+    # [l]og [v]erbose
+    vlv = log --decorate
+    # [l]og [g]raph
+    vlg = log --decorate --oneline --graph --all
+    # [b]ranch
+    vb = rev-parse --abbrev-ref HEAD
+    # [a]utomatic [b]ase following convention dev/<base>/<feature>
+    vab = "!f() { branch=\"$(git rev-parse --symbolic-full-name HEAD)\"; printf '%s' \"$branch\" | awk -F/ '$1==\"refs\" && $2==\"heads\" && NF==5 { print $4; } $1!=\"refs\" || $2!=\"heads\" || NF!=5 { print \"unknown base branch\" }'; }; f"
+    # [a]utomatic [f]eature following convention dev/<base>/<feature>
+    vaf = "!f() { branch=\"$(git rev-parse --symbolic-full-name HEAD)\"; printf '%s' \"$branch\" | awk -F/ '$1==\"refs\" && $2==\"heads\" && NF==5 { print $5; } $1!=\"refs\" || $2!=\"heads\" || NF!=5 { print \"unknown topic branch\" }'; }; f"
+    # [u]nmerged
+    vu = diff --name-only --diff-filter=U
+    # [d]iff [f]iltered
+    vdf = "!f() { git diff --name-only --diff-filter=\"$(printf '%s' \"$1\" | tr '[:lower:]' '[:upper:]')\"; }; f"
+
+    ## [f]ormat...
+    # [a]utomatic branch using provided suffix
+    # Prints: dev/<arg0>
+    dev = "!f() { name=$(printf '%s' \"$*\" | tr ' ' _); git switch -c dev/$(git rev-parse --abbrev-ref HEAD)/${name}; }; f"
+
+    ## [r]ebase...
+    #
+    r = rebase --reapply-cherry-picks --empty=keep
+    # [i]nteractive
+    ri = rebase --interactive --reapply-cherry-picks --empty=keep
+    # [c]continue
+    rc = rebase --continue
+    # [r]ebase [a]utomatically based on merge-base with HEAD ref following the convention <user>/<base>/<feature>
+    ra = "!f() { git rebase --reapply-cherry-picks --empty=keep \"$@\" $(git merge-base HEAD $(git vab)); }; f"
+    # ra but [i]nteractive
+    rai = "!f() { git ra --interactive \"$@\"; }; f"
+    # [p]ull base, then [r]ebase [a]utomatically based on HEAD ref following the convention feat/<base>/<feature>
+    pra = "!f() { git fetch -v $(printf '%s:%s' \"$(git for-each-ref --format='%(upstream:short)' refs/heads/$(git vab) | tr / ' ')\" $(git vab)) && git rebase --reapply-cherry-picks --empty=keep \"$@\" $(git vab); }; f"
+    ## [c]ommit...
+    #
+    c = commit -vv
+    # [a]mend
+    ca = commit -vv --amend
+    # [e]verything
+    ce = "!f() { git add -A :/ && git commit -vv; }; f"
+
+    ## [c]herry [p]ick...
+    cp = cherry-pick
+    # [c]ontinue
+    cpc = cherry-pick --continue
+
+    ## [c]heck-[o]ut...
+    co = checkout
+    ## -[p]
+    cop = checkout -p
+
+    ## [m]erge[t]ool
+    mt = mergetool
+
+    # What main commit is the last one merged into staging?
+    merge-staging-base = merge-base amdeng/main amdeng/amd-staging
+    # What patches are in a merge?
+    merge-show = "!f() { git show --stat \"$1^..$1\"; }; f"
+    # What merge brings in a specific commit?
+    merge-find = "!sh -c 'commit=$0 && branch=${1:-HEAD} && (git rev-list $commit..$branch --ancestry-path | cat -n; git rev-list $commit..$branch --first-parent | cat -n) | sort -k2 -s | uniq -f1 -d | sort -n | tail -1 | cut -f2'"
+    # Shortcut for deleting current branch and checking out the previous HEAD (git-branch doesn't support the `-` notation for `@{-1}`)
+    done = "!f() { git checkout - && git branch -D @{-1}; }; f"
+
+    # Save a backup of a ref to gerrit based on HEAD ref following
+    # the convention <user>/<base>/<feature>
+    save = "!f() { git push \"$@\" amdeng HEAD:amd/dev/$USER/saved/$(git rev-parse --abbrev-ref HEAD); }; f"
+    # List all personal branches on gerrit (without an implicit fetch)
+    saved = for-each-ref --format='%(refname:strip=3)' 'refs/remotes/amd/slinder1/**'
+    # Delete remote branches using fzf
+    saved-cleanup = "!f() { git push amd --delete $(git saved | fzf -m); }; f"
+
+    # subject
+    ascii-subject = "!f() { git rev-list --format=format:%s --no-commit-header --max-count=1 \"$1\" | tr '[:upper:]' '[:lower:]' | sed -E -e 's/\\(#[0-9]+\\)//g' -e \"s/'//g\" -e 's/[^a-z0-9]/ /g' -e 's/^\\s+//' -e 's/\\s+$//' -e 's/\\s+/_/g'; }; f"
+    # github PRs
+    pr-pull = "!f() { \
+        git fetch --quiet $1 pull/$2/head:PULL_PR_TEMP || exit 1; \
+        local branch=pr/$1/$2_$(git ascii-subject PULL_PR_TEMP); \
+        git fetch $1 pull/$2/head:$branch && \
+        git switch --no-guess $branch; \
+        git branch --quiet -D PULL_PR_TEMP; \
+        }; f"
+
+    abort = "!f() { \
+        g=\"$(git rev-parse --git-dir)\"; \
+        if [ -d \"$g/rebase-merge\" -o -d \"$g/rebase-apply\" ]; then \
+            git rebase --abort; \
+        elif [ -f \"$g/MERGE_HEAD\" ]; then \
+            git merge --abort; \
+        elif [ -f \"$g/BISECT_LOG\" ]; then \
+            git bisect reset; \
+        else \
+            echo nothing to abort 2>&1; \
+            exit 1; \
+        fi; \
+        }; f"
+
+[credential "https://github.com"]
+    helper = !/home/slinder1/.local/bin/gh auth git-credential
+[credential "https://gist.github.com"]
+    helper = !/home/slinder1/.local/bin/gh auth git-credential

@@ -1,0 +1,2 @@
+set comments-=://
+set comments+=:///,://

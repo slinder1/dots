@@ -1,0 +1,22 @@
+%YAML 1.2
+---
+# http://www.sublimetext.com/docs/3/syntax.html
+name: LLVM
+file_extensions: [ll]
+scope: source.llvm
+contexts:
+  main:
+    - match: ;.*
+      scope: comment.line.semicolon.llvm
+    - match: \b(define)\b
+      scope: keyword.control.llvm
+    - match: \b(ret|br|switch|indirectbr|invoke|resume|unreachable|add|fadd|sub|fsub|mul|fmul|udiv|sdiv|fdiv|urem|srem|frem|shl|lshr|ashr|and|or|xor|extractelement|insertelement|shufflevector|extractvalue|insertvalue|alloca|load|store|fence|cmpxchg|atomicrmw|getelementptr|trunc|zext|sext|fptrunc|fpext|fptoui|fptosi|uitofp|sitofp|ptrtoint|inttoptr|bitcast|icmp|fcmp|phi|select|call|va_arg|landingpad)\b
+      scope: keyword.operator.llvm
+    - match: (@[A-Za-z0-9_]+)
+      scope: support.function.llvm
+    - match: (%[A-Za-z0-9_]+)
+      scope: variable.parameter.llvm
+    - match: (![A-Za-z0-9_\.\"]+)
+      scope: variable.parameter.llvm
+    - match: ((half|float|double|x86_fp80|fp128|ppc_fp128|i[0-9]+)\**|void|label)
+      scope: storage.type.llvm

@@ -1,0 +1,6 @@
+#!/bin/bash
+
+cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"
+
+docker build -t dots . \
+&& docker run --rm -it -v $HOME/dots:/home/slinder1/dots dots
