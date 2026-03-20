@@ -81,6 +81,12 @@ end
 -- utilities.
 vim.keymap.set({ 'i', 't', 'c' }, '<C-j>', '<C-\\><C-n>')
 
+vim.keymap.set({ 'n' }, '<C-S-v>', '"+p')
+vim.keymap.set({ 'i', 'c' }, '<C-S-v>', '<C-r>+')
+vim.keymap.set({ 't' }, '<C-S-v>', '<C-\\><C-n>"+pi')
+vim.keymap.set({ 'n' }, '<C-S-c>', '"+yy')
+vim.keymap.set({ 'v' }, '<C-S-c>', '"+y')
+
 local windowkeys = { 'h', 'j', 'k', 'l', 'v', 's', 'H', 'J', 'K', 'L' }
 for _,key in pairs(windowkeys) do
   vim.keymap.set('n', '<space>w' .. key, '<C-w>' .. key)
@@ -411,8 +417,8 @@ local spec = {
   'tpope/vim-sleuth',
 }
 
-require('lazy').setup {
+require('lazy').setup({
   spec = spec,
   defaults = { lazy = false },
   change_detection = { enabled = false },
-}
+})
