@@ -1,0 +1,28 @@
+#!/usr/bin/env -S uv run --script
+# /// script
+# requires-python = ">=3.12"
+# dependencies = ['pynvim', 'psutil', 'setuptools']
+# ///
+
+
+from os import execvp, environ
+from os.path import abspath
+from sys import argv, stderr, exit
+from dataclasses import dataclass
+import pynvim
+
+def detach_all(sock, args) -> int:
+    with pynvim.attach("socket", path=sock) as nvim:
+        for ui in nvim.api.list_uis():
+            if ui['chan']:
+                nvim.funcs.chanclose(ui['chan'])
+    return 0
+
+
+def main() -> None:
+    home = environ["HOME"]
+    args = argv[1:]
+    exit(detach_all(home + "/.local/state/nvim.sock", args))
+
+if __name__ == "__main__":
+    main()

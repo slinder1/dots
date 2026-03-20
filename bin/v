@@ -18,11 +18,7 @@ class RemoteState:
     exitcode: int = 0
     buffers: int = 0
 
-def remote_edit(sock, args) -> int:
-    wait = False
-    if args[0] == "--wait":
-        wait = True
-        args = args[1:]
+def remote_edit(sock, args, wait) -> int:
     state = RemoteState()
     with pynvim.attach("socket", path=sock) as nvim:
         for path in args:
@@ -55,13 +51,17 @@ def remote_edit(sock, args) -> int:
 def main() -> None:
     nested = "NVIM" in environ and environ["NVIM"]
     args = argv[1:]
+    wait = False
+    if args[0] == "--wait":
+        wait = True
+        args = args[1:]
     if not args:
         if nested:
             print("error: refusing to nest (hint: unset NVIM and try again)", file=stderr)
             exit(1)
         execvp("nvim", ["nvim", "+term", "+starti"])
     if nested:
-        exit(remote_edit(environ["NVIM"], args))
+        exit(remote_edit(environ["NVIM"], args, wait))
     execvp("nvim", ["nvim"] + args)
 
 if __name__ == "__main__":
