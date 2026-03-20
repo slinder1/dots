@@ -59,7 +59,7 @@
             ov
           ];
           package-lists.bar = [ pkgs.delta ];
-          legacyPackages.homeConfigurations = pkgs.lib.genAttrs [ "scott" "user" ] (
+          legacyPackages.homeConfigurations = pkgs.lib.genAttrs [ "scott" "user" "slinder1" ] (
             user:
             home-manager.lib.homeManagerConfiguration {
               inherit pkgs;
