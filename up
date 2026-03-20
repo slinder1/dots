@@ -3,89 +3,93 @@
 ROOT="$(dirname "$(readlink -f "$0")")"
 readonly ROOT
 
+bail() {
+  [ $# -gt 0 ] && printf "$@" >&2
+  exit 1;
+}
 usage() {
   printf 'Usage: %s command...\nAvailable Commands:\n' "$0" >&2
-  sed -ne 's/^function \(.*\)/\1/p' "$0" >&2
+  sed -ne 's/^\([a-z_]\+\)() (/\1/p' "$0" >&2
   exit 1
 }
 [ $# -gt 0 ] || usage
 
 # Typically initial setup, or system upgrade, but requires apt-based system
 # and so is not included in "all".
-function apt() ( # )
-  sudo apt-get install -y curl
+apt() (
+  sudo apt-get install -y curl ||bail
 )
 
-function lix() ( # )
-  curl -sSf -L https://install.lix.systems/lix | sh -s -- install
+lix() (
+  curl -sSf -L https://install.lix.systems/lix | sh -s -- install ||bail
 )
 
-function darwin() ( # )
-  [ -e /etc/nix-darwin ] || sudo ln -s "$ROOT/nix" /etc/nix-darwin
-  sudo nix --experimental-features 'flakes nix-command' run nix-darwin/nix-darwin-25.11#darwin-rebuild -- switch
+darwin() (
+  [ -e /etc/nix-darwin ] || sudo ln -s "$ROOT/nix" /etc/nix-darwin ||bail
+  sudo nix --experimental-features 'flakes nix-command' run 'nix-darwin/nix-darwin-25.11#darwin-rebuild' -- switch ||bail
 )
 
-function home() ( # )
-  nix --experimental-features 'flakes nix-command' run nixpkgs#home-manager -- switch --flake "$ROOT/nix#$USER"
+home() (
+  nix --experimental-features 'flakes nix-command' run 'nixpkgs#home-manager' -- switch --flake "$ROOT/nix#$USER" ||bail
 )
 
-function etc() ( # )
-  mkdir -p ~/.config
-  cd "$ROOT"/etc
+etc() (
+  mkdir -p ~/.config ||bail
+  cd "$ROOT"/etc ||bail
   for name in *; do
     if [ "$name" = config ]; then
       continue
     fi
     if [ -d "$name" ]; then
-      ln -sf "$ROOT"/etc/"$name" ~/.config
+      ln -sf "$ROOT"/etc/"$name" ~/.config ||bail
     else
-      ln -sf "$ROOT"/etc/"$name" ~/."$name"
+      ln -sf "$ROOT"/etc/"$name" ~/."$name" ||bail
     fi
   done
-  cd "$ROOT"/etc/config
+  cd "$ROOT"/etc/config ||bail
   for name in *; do
-      ln -sf "$ROOT"/etc/config/"$name" ~/.config
+      ln -sf "$ROOT"/etc/config/"$name" ~/.config ||bail
   done
 )
 
-function bin() ( # )
-  mkdir -p ~/.local/bin
-  cd "$ROOT"/bin
+bin() (
+  mkdir -p ~/.local/bin ||bail
+  cd "$ROOT"/bin ||bail
   for name in *; do
-    ln -sf "$ROOT"/bin/"$name" ~/.local/bin/"$name"
+    ln -sf "$ROOT"/bin/"$name" ~/.local/bin/"$name" ||bail
   done
 )
 
-function bob() ( # )
-  "$(which bob)" use 0.11.5
+bob() (
+  "$(which bob)" use 0.11.5 >/dev/null || bail
 )
 
-function bash_preexec() ( # )
+bash_preexec() (
   curl -sSL https://github.com/rcaloras/bash-preexec/archive/refs/tags/0.6.0.tar.gz \
-    | tar -C ~ -xzf - --strip-components=1 bash-preexec-0.6.0/bash-preexec.sh
-  mv ~/{,.}bash-preexec.sh
+    | tar -C ~ -xzf - --strip-components=1 bash-preexec-0.6.0/bash-preexec.sh || bail
+  mv ~/bash-preexec.sh ~/.bash-preexec.sh ||bail
 )
 
-function all() ( # )
-  etc
-  bin
-  bob
-  bash_preexec
+all() (
+  etc ||bail
+  bin ||bail
+  bob ||bail
+  bash_preexec ||bail
 )
 
-function all_darwin() ( # )
-  all
-  darwin
-  home
+all_darwin() (
+  all    ||bail
+  darwin ||bail
+  home   ||bail
 )
 
 for cmd in "$@"; do
-  if [ "$(type -t "$cmd")" != "function" ]; then
+  if ! type "$cmd" | grep -q "function"; then
     printf 'Error: Unknown command `%s`\n\n' "$cmd" >&2
     usage
   fi
 done
 
 for cmd in "$@"; do
-  "$cmd"
+  "$cmd" ||bail "failed during %s\n" "$cmd"
 done
