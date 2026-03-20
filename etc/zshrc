@@ -1,0 +1,4 @@
+bindkey -v
+alias ls="ls --color=always"
+alias ll="ls -hal --color=always"
+source ~/.bash_aliases

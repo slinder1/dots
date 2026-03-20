@@ -7,9 +7,7 @@
 
 SHNAME=$(basename $SHELL)
 
-export MISE_PIN=1
-#[[ -x ~/.local/bin/mise ]] && eval "$(~/.local/bin/mise activate $SHNAME)"
-[ -d "$HOME/.local/share/bob/nvim-bin" ] && PATH="$HOME/.local/share/bob/nvim-bin:$PATH"
+PATH="$HOME/.local/share/bob/nvim-bin:$HOME/.local/bin:$PATH"
 hash starship >/dev/null 2>&1 && eval "$(starship init $SHNAME)"
 [[ $SHNAME = bash && -f ~/.bash-preexec.sh ]] && source ~/.bash-preexec.sh
 if hash atuin >/dev/null 2>&1; then
