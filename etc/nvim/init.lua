@@ -217,6 +217,20 @@ local spec = {
       local action_state = require 'telescope.actions.state'
       local builtin = require 'telescope.builtin'
       local sorters = require 'telescope.sorters'
+      local put = function(prompt_bufnr)
+        local current_picker = action_state.get_current_picker(prompt_bufnr)
+        local v = ''
+        if #current_picker:get_multi_selection() > 0 then
+          local values = vim.iter(ipairs(current_picker:get_multi_selection())):map(function(_, v)
+            return v.value
+          end):totable()
+          v = table.concat(values, ' ')
+        else
+          v = action_state.get_selected_entry().value
+        end
+        actions.close(prompt_bufnr)
+        vim.api.nvim_put({v}, 'c', true, true)
+      end
       telescope.setup {
         defaults = {
           mappings = {
@@ -224,12 +238,14 @@ local spec = {
               ['<C-j>'] = function(_)
                 vim.cmd.stopinsert()
               end,
-              ['<M-p>'] = function(prompt_bufnr)
-                actions.close(prompt_bufnr)
-                vim.api.nvim_put({
-                  action_state.get_selected_entry().value
-                }, 'c', true, true)
-              end,
+              ['<C-p>'] = put,
+              ['<C-s>'] = actions.select_all,
+              ['<C-d>'] = actions.drop_all,
+            },
+            n = {
+              ['<C-p>'] = put,
+              ['<C-s>'] = actions.select_all,
+              ['<C-d>'] = actions.drop_all,
             },
           },
         },
