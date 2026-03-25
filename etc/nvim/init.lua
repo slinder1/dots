@@ -28,8 +28,8 @@ vim.opt.backup = false
 vim.opt.writebackup = false
 
 vim.opt.expandtab = true
-vim.opt.tabstop = 8
-vim.opt.shiftwidth = 4
+vim.opt.tabstop = 4
+vim.opt.shiftwidth = 2
 
 vim.opt.ignorecase = true
 vim.opt.smartcase = true
@@ -88,7 +88,7 @@ vim.keymap.set({ 'n' }, '<C-S-c>', '"+yy')
 vim.keymap.set({ 'v' }, '<C-S-c>', '"+y')
 
 local windowkeys = { 'h', 'j', 'k', 'l', 'v', 's', 'H', 'J', 'K', 'L' }
-for _,key in pairs(windowkeys) do
+for _, key in ipairs(windowkeys) do
   vim.keymap.set('n', '<space>w' .. key, '<C-w>' .. key)
 end
 vim.keymap.set('n', '<space>wd', '<C-w>c')
@@ -99,6 +99,7 @@ vim.keymap.set({ 'n', 't', 'i' }, '<M-p>', function()
 end)
 
 -- jump to previous shell prompt
+-- TODO support proper prompt markers when available
 vim.keymap.set({ 'n', 'x' }, '<space>c', 'k?^[❮❯]<CR>')
 
 vim.api.nvim_create_autocmd('FileType', {
@@ -205,7 +206,6 @@ local spec = {
     'nvim-telescope/telescope.nvim',
     dependencies = {
       'nvim-lua/plenary.nvim',
-      'nvim-telescope/telescope-file-browser.nvim',
       'keyvchan/telescope-find-pickers.nvim',
       'debugloop/telescope-undo.nvim',
       { 'nvim-telescope/telescope-fzf-native.nvim', build = 'make', },
@@ -262,24 +262,16 @@ local spec = {
             sorter = sorters.fuzzy_with_index_bias {},
           },
         },
-        extensions = {
-          file_browser = {
-            files = false,
-          },
-        },
       }
       -- Lazy loading would make find_pickers essentially useless until
       -- the extensions are activated by some other means, so load eagerly
-      for _, ext in ipairs({ 'find_pickers', 'undo', 'fzf', 'yank_history', 'file_browser' }) do
+      for _, ext in ipairs({ 'find_pickers', 'undo', 'fzf', 'yank_history' }) do
         telescope.load_extension(ext)
       end
       vim.cmd.cnoreabbrev('T', 'Telescope')
       modes = { 'n', 't', 'i' }
       vim.keymap.set(modes, '<C-f>', function()
         telescope.extensions.find_pickers.find_pickers {}
-      end)
-      vim.keymap.set(modes, '<C-S-t>', function()
-        telescope.extensions.find_pickers.file_browser {}
       end)
       vim.keymap.set(modes, '<C-o>', function()
         builtin.buffers { only_cwd = true }
@@ -306,11 +298,13 @@ local spec = {
       { '<space>d', ':Bdelete<cr>' },
     },
     config = function()
-      vim.api.nvim_create_user_command('Bd', 'Bdelete<bang>', {
-        nargs = '?',
-        bang = true,
-        complete = 'buffer',
-      })
+      for _, name in ipairs({ 'Bd', 'BD' }) do
+        vim.api.nvim_create_user_command(name, 'Bdelete<bang>', {
+          nargs = '?',
+          bang = true,
+          complete = 'buffer',
+        })
+      end
     end,
   },
   {
@@ -347,9 +341,7 @@ local spec = {
       })
       vim.lsp.enable('clangd')
       vim.lsp.enable('lua_ls')
-      vim.lsp.config('rust_analyzer', {
-        cmd = { 'rust-analyzer-x86_64-unknown-linux-gnu' },
-      })
+      vim.lsp.enable('rust_analyzer')
       vim.lsp.config('tblgen_lsp_server', {
         cmd = { 'tblgen-lsp-server', '--tablegen-compilation-database=tablegen_compile_commands.yml' },
       })
@@ -405,27 +397,21 @@ local spec = {
   {
     'ggandor/leap.nvim',
     config = function()
-      require('leap').set_default_mappings()
-      require('leap').opts.preview_filter =
+      local leap = require('leap')
+      leap.set_default_mappings()
+      leap.opts.preview_filter =
           function(ch0, ch1, ch2)
             return not (
               ch1:match('%s') or
               ch0:match('%a') and ch1:match('%a') and ch2:match('%a')
             )
           end
-      require('leap').opts.equivalence_classes = { ' \t\r\n', '([{', ')]}', '\'"`' }
-      require('leap').opts.safe_labels = {}
-      require('leap').opts.labels = 'hjklhgfdsaqwerpoizxcv/.,mn'
+      leap.opts.equivalence_classes = { ' \t\r\n', '([{', ')]}', '\'"`' }
+      leap.opts.safe_labels = {}
+      leap.opts.labels = 'hjklhgfdsaqwerpoizxcv/.,mn'
     end,
   },
-  {
-    'NeogitOrg/neogit',
-    dependencies = {
-      'nvim-lua/plenary.nvim',
-      'sindrets/diffview.nvim',
-      'nvim-telescope/telescope.nvim',
-    },
-  },
+  'sindrets/diffview.nvim',
   'airblade/vim-gitgutter',
   'ntpeters/vim-better-whitespace',
   'tpope/vim-abolish',
