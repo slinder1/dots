@@ -52,7 +52,7 @@ def main() -> None:
     nested = "NVIM" in environ and environ["NVIM"]
     args = argv[1:]
     wait = False
-    if args[0] == "--wait":
+    if len(args) and args[0] == "--wait":
         wait = True
         args = args[1:]
     if not args:
