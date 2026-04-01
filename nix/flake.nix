@@ -58,7 +58,11 @@
             starship
             ov
           ];
-          package-lists.bar = [ pkgs.delta ];
+          package-lists.lsp = with pkgs; [
+            clang-tools
+            rust-analyzer
+            lua-language-server
+          ];
           legacyPackages.homeConfigurations = pkgs.lib.genAttrs [ "scott" "user" "slinder1" ] (
             user:
             home-manager.lib.homeManagerConfiguration {

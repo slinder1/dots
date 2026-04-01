@@ -3,7 +3,8 @@ Description=Neovim
 
 [Service]
 ExecStartPre=/usr/bin/rm -f %h/.local/state/nvim.sock
-ExecStart=%h/.local/share/bob/nvim-bin/nvim --listen %h/.local/state/nvim.sock --headless
+ExecStart=/bin/bash -l -c 'exec %h/.local/share/bob/nvim-bin/nvim --listen %h/.local/state/nvim.sock --headless'
+Restart=always
 
 [Install]
 WantedBy=default.target
