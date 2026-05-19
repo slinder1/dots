@@ -57,9 +57,12 @@
             fzf
             starship
             ov
+            gh
           ];
           package-lists.lsp = with pkgs; [
             clang-tools
+            cargo
+            rustc
             rust-analyzer
             lua-language-server
           ];

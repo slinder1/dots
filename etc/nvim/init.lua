@@ -366,19 +366,6 @@ local spec = {
     opts = {},
   },
   {
-    'nvim-treesitter/nvim-treesitter',
-    build = ':TSUpdate',
-    config = function()
-      ---@diagnostic disable: missing-fields
-      require('nvim-treesitter.configs').setup({
-        ensure_installed = { 'c', 'lua', 'vim', 'vimdoc', 'tablegen' },
-        sync_install = false,
-        highlight = { enable = true, },
-        indent = { enable = true, },
-      })
-    end,
-  },
-  {
     'gbprod/yanky.nvim',
     keys = {
       { 'p',     '<Plug>(YankyPutAfter)',      { 'n', 'x' } },
@@ -395,10 +382,11 @@ local spec = {
     },
   },
   {
-    'ggandor/leap.nvim',
+    url = "https://codeberg.org/andyg/leap.nvim",
     config = function()
       local leap = require('leap')
-      leap.set_default_mappings()
+      vim.keymap.set({'n', 'x', 'o'}, 's', '<Plug>(leap)')
+      vim.keymap.set('n',             'S', '<Plug>(leap-from-window)')
       leap.opts.preview_filter =
           function(ch0, ch1, ch2)
             return not (
