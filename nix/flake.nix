@@ -66,6 +66,13 @@
             rust-analyzer
             lua-language-server
           ];
+          package-lists.py = with pkgs; [
+            (python3.withPackages (ps: with ps; [
+              psutils
+              sphinx
+              myst-parser
+            ]))
+          ];
           legacyPackages.homeConfigurations = pkgs.lib.genAttrs [ "scott" "user" "slinder1" ] (
             user:
             home-manager.lib.homeManagerConfiguration {

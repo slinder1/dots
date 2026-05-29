@@ -149,6 +149,8 @@
             git merge --abort; \
         elif [ -f \"$g/BISECT_LOG\" ]; then \
             git bisect reset; \
+        elif [ -f \"$g/CHERRY_PICK_HEAD\" ]; then \
+            git cherry-pick --abort; \
         else \
             echo nothing to abort 2>&1; \
             exit 1; \
