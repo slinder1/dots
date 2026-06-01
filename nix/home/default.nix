@@ -1,8 +1,6 @@
 {
-  lib,
   self,
   self',
-  config,
   inputs,
   inputs',
   ...
