@@ -24,12 +24,19 @@ lix() (
   curl -sSf -L https://install.lix.systems/lix | sh -s -- install ||bail
 )
 
+ensure_impure() (
+  mkdir -p ~/.config ||bail
+  [ -e ~/.config/home.nix ] || cp "$ROOT/nix/template.nix" ~/.config/home.nix ||bail
+)
+
 darwin() (
+  ensure_impure ||bail
   [ -e /etc/nix-darwin ] || sudo ln -s "$ROOT/nix" /etc/nix-darwin ||bail
   sudo nix --experimental-features 'flakes nix-command' run 'nix-darwin/nix-darwin-25.11#darwin-rebuild' -- switch --impure ||bail
 )
 
 home() (
+  ensure_impure ||bail
   nix --experimental-features 'flakes nix-command' run 'nixpkgs#home-manager' -- switch --impure --flake "$ROOT/nix#$USER" ||bail
 )
 
