@@ -6,6 +6,6 @@
 }:
 {
   home.packages = with self'.package-lists; lib.concatLists [
-    utils
+    core
   ];
 }

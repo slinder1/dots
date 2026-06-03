@@ -21,6 +21,7 @@ $crystal\
 $custom\
 $sudo\
 $cmd_duration\
+$nix_shell\
 $line_break\
 $character"""
 right_format = """
@@ -37,17 +38,20 @@ format = '[$user]($style)'
 ssh_symbol = ''
 format = '@[$hostname]($style)'
 [directory]
-format = ':[$path]($style)'
+format = ':[$path]($style) '
 [git_branch]
-format = '[ $symbol$branch]($style) '
+format = '[$symbol$branch]($style) '
 truncation_length = 40
 [git_status]
 disabled = true
 [memory_usage]
 style = 'red'
-format = '$symbol [${ram}( |${swap})]($style)'
+format = '$symbol [${ram}( |${swap})]($style) '
 disabled = true
 [env_var.CM_CFG]
 style = 'green'
 symbol = ' '
 format = '[$symbol$env_value]($style) '
+[nix_shell]
+symbol = '❄️ '
+format = '[$symbol$name]($style) '

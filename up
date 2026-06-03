@@ -24,19 +24,24 @@ lix() (
   curl -sSf -L https://install.lix.systems/lix | sh -s -- install ||bail
 )
 
-ensure_impure() (
+# quality-of-life hacks for darwin/home
+nix_qol() (
   mkdir -p ~/.config ||bail
+  # we are only impure for this single "local" config file, maybe revisit a
+  # hosts-based approach, but seems unecessary
   [ -e ~/.config/home.nix ] || cp "$ROOT/nix/template.nix" ~/.config/home.nix ||bail
+  # not realizing an unstaged change is being ignored is infuriating
+  git -C "$ROOT" add -A
 )
 
 darwin() (
-  ensure_impure ||bail
+  nix_qol ||bail
   [ -e /etc/nix-darwin ] || sudo ln -s "$ROOT/nix" /etc/nix-darwin ||bail
   sudo nix --experimental-features 'flakes nix-command' run 'nix-darwin/nix-darwin-25.11#darwin-rebuild' -- switch --impure ||bail
 )
 
 home() (
-  ensure_impure ||bail
+  nix_qol ||bail
   nix --experimental-features 'flakes nix-command' run 'nixpkgs#home-manager' -- switch --impure --flake "$ROOT/nix#$USER" ||bail
 )
 

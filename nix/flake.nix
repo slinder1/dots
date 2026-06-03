@@ -46,35 +46,46 @@
         in
         {
           _module.args.pkgs = pkgs;
-          package-lists.utils = with pkgs; [
-            bob-nvim
-            uv
-            atuin
-            bat
-            delta
-            ripgrep
-            fd
-            fzf
-            starship
-            ov
-            gh
-          ];
-          package-lists.lsp = with pkgs; [
-            clang-tools
-            cargo
-            rustc
-            rust-analyzer
-            lua-language-server
-          ];
-          package-lists.py = with pkgs; [
-            (python3.withPackages (
-              ps: with ps; [
-                psutils
-                sphinx
-                myst-parser
-              ]
-            ))
-          ];
+          package-lists = {
+            core = with pkgs; [
+              coreutils
+              xxd
+              bob-nvim
+              uv
+              atuin
+              bat
+              delta
+              ripgrep
+              fd
+              fzf
+              starship
+              ov
+              gh
+            ];
+            build = with pkgs; [
+              git
+              ninja
+              cmake
+              pkg-config
+              automake
+              libtool
+              (python3.withPackages (
+                ps: with ps; [
+                  virtualenv
+                  psutils
+                  sphinx
+                  myst-parser
+                ]
+              ))
+            ];
+            lsp = with pkgs; [
+              clang-tools
+              cargo
+              rustc
+              rust-analyzer
+              lua-language-server
+            ];
+          };
           legacyPackages.homeConfigurations = pkgs.lib.genAttrs [ "scott" "user" "slinder1" ] (
             user:
             home-manager.lib.homeManagerConfiguration {
