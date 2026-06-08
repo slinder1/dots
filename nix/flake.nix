@@ -48,43 +48,53 @@
           _module.args.pkgs = pkgs;
           package-lists = {
             core = with pkgs; [
-              coreutils
-              xxd
-              bob-nvim
-              uv
               atuin
               bat
+              bob-nvim
+              ccache
+              coreutils
               delta
-              ripgrep
               fd
               fzf
-              starship
-              ov
               gh
-            ];
-            build = with pkgs; [
               git
-              ninja
-              cmake
-              pkg-config
-              automake
-              libtool
-              (python3.withPackages (
-                ps: with ps; [
-                  virtualenv
-                  psutils
-                  sphinx
-                  myst-parser
-                ]
-              ))
+              ov
+              ripgrep
+              starship
+              uv
+              xxd
             ];
             lsp = with pkgs; [
-              clang-tools
               cargo
-              rustc
-              rust-analyzer
+              clang-tools
               lua-language-server
+              rust-analyzer
+              rustc
             ];
+          };
+          devShells = {
+            llvm =
+              pkgs.mkShell.override
+                {
+                  stdenv = pkgs.llvmPackages.libcxxStdenv;
+                }
+                {
+                  name = "llvm";
+                  packages = with pkgs; [
+                    llvmPackages.bintools
+                    git
+                    ninja
+                    cmake
+                    ccache
+                    (python3.withPackages (
+                      ps: with ps; [
+                        psutils
+                        sphinx
+                        myst-parser
+                      ]
+                    ))
+                  ];
+                };
           };
           legacyPackages.homeConfigurations = pkgs.lib.genAttrs [ "scott" "user" "slinder1" ] (
             user:

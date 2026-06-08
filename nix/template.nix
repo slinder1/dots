@@ -5,7 +5,9 @@
   ...
 }:
 {
-  home.packages = with self'.package-lists; lib.concatLists [
-    core
-  ];
+  home.packages =
+    with self'.package-lists;
+    lib.concatLists [
+      core
+    ];
 }
