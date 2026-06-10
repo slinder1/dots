@@ -95,6 +95,95 @@
                     ))
                   ];
                 };
+            rock1030 =
+              let
+                family = "gfx103X-all";
+                venvPath = ".venv.gfx103X-all";
+              in
+              pkgs.mkShellNoCC {
+                name = "rock";
+                packages = with pkgs; [
+                  autoconf
+                  automake
+                  bison
+                  ccache
+                  cmake
+                  dvc
+                  flex
+                  gfortran # also includes g++, etc.
+                  git
+                  libtool
+                  ncurses # just for libtinfo, since therock builds its own ncurses
+                  ninja
+                  pkg-config
+                  python3
+                  texinfo
+                  (stdenv.mkDerivation rec {
+                    pname = "patchelf-rocm";
+                    version = "d0f70eea5397606c486857e0a105e53ec123904a";
+
+                    src = fetchGit {
+                      url = "https://github.com/NixOS/${pname}";
+                      rev = "${version}";
+                    };
+
+                    patchPhase = ''
+                      PATCHELF_GIT_REF="${version}"
+                      SHORT_GIT_REF="''${PATCHELF_GIT_REF:0:12}"
+                      BASE_VERSION="$(cat version)"
+                      LOCAL_VERSION="''${BASE_VERSION}+therock.''${SHORT_GIT_REF}"
+                      printf "%s\n" "''${LOCAL_VERSION}" > version
+                    '';
+
+                    nativeBuildInputs = [ autoreconfHook ];
+                  })
+                  (pkgs.writeShellApplication {
+                    name = "therock-update-python";
+                    text = ''
+                      set -x
+                      pip install --upgrade pip
+                      pip install --upgrade -r requirements.txt
+                      pip install --upgrade 'rocm[libraries,devel]' --index-url=https://rocm.nightlies.amd.com/v2/${family}
+                    '';
+                  })
+                  (pkgs.writeShellApplication {
+                    name = "therock-fetch-sources";
+                    text = ''
+                      set -x
+                      python3 ./build_tools/fetch_sources.py
+                    '';
+                  })
+                ];
+                HSA_OVERRIDE_GFX_VERSION = "10.3.0";
+                CM_CONF_EXTRA = ''
+                  -DTHEROCK_AMDGPU_FAMILIES=gfx103X-all
+                  -DTHEROCK_ENABLE_ALL=OFF
+                  -DTHEROCK_ENABLE_COMPILER=ON
+                  -DTHEROCK_ENABLE_ROCGDB=ON
+                  -DTHEROCK_USE_LLD=ON
+                  -DFLANG_PARALLEL_COMPILE_JOBS=16
+                  -DLLVM_PARALLEL_LINK_JOBS=16
+                '';
+                shellHook = ''
+                  cd "$FLAKE_ROOT"
+                  if [ ! -d ${venvPath} ]; then
+                    printf "[shell_hook] Creating ${venvPath}\n"
+                    python3 ./build_tools/setup_venv.py ${venvPath} \
+                      --packages 'rocm[libraries,devel]' --index-name nightly --index-subdir ${family}
+                  fi
+                  printf "[shell_hook] Activating ${venvPath}\n"
+                  source ${venvPath}/bin/activate
+                  if [ ! -d .ccache ]; then
+                    printf "[shell_hook] Creating .ccache\n"
+                    eval "$(python3 ./build_tools/setup_ccache.py)"
+                  else
+                    printf "[shell_hook] Activating .ccache\n"
+                    export CCACHE_CONFIGPATH="$PWD"/.ccache/ccache.conf
+                  fi
+                  printf "[shell_hook] Helper commands available:\n"
+                  compgen -c therock- | sed 's/^/\t/'
+                '';
+              };
           };
           legacyPackages.homeConfigurations = pkgs.lib.genAttrs [ "scott" "user" "slinder1" ] (
             user:
