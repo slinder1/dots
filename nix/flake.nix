@@ -13,6 +13,8 @@
       url = "github:nix-community/home-manager";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    cm.url = "github:ROCm/cm";
+    gd.url = "github:slinder1/gd";
   };
 
   outputs =
@@ -20,6 +22,8 @@
       flake-parts,
       easy-hosts,
       home-manager,
+      cm,
+      gd,
       ...
     }:
     flake-parts.lib.mkFlake { inherit inputs; } {
@@ -63,6 +67,8 @@
               starship
               uv
               xxd
+              cm.packages.${system}.cm
+              gd.packages.${system}.gd
             ];
             lsp = with pkgs; [
               cargo
@@ -74,27 +80,46 @@
           };
           devShells = {
             llvm =
-              pkgs.mkShell.override
-                {
-                  stdenv = pkgs.llvmPackages.libcxxStdenv;
-                }
-                {
-                  name = "llvm";
-                  packages = with pkgs; [
-                    llvmPackages.bintools
-                    git
-                    ninja
-                    cmake
-                    ccache
-                    (python3.withPackages (
-                      ps: with ps; [
-                        psutils
-                        sphinx
-                        myst-parser
-                      ]
-                    ))
-                  ];
-                };
+              let
+                venvPath = ".venv";
+              in
+              pkgs.mkShell {
+                name = "llvm";
+                packages = with pkgs; [
+                  ccache
+                  cmake
+                  git
+                  graphviz
+                  llvmPackages.bintools
+                  ninja
+                  uv
+                  (python3.withPackages (
+                    ps: with ps; [
+                      psutils
+                    ]
+                  ))
+                  (pkgs.writeShellApplication {
+                    name = "llvmdev-update-python";
+                    text = ''
+                      set -x
+                      uv pip install --upgrade -r llvm/docs/requirements.txt
+                      uv pip install --upgrade swig
+                      uv pip install --upgrade black=='23.*' darker
+                      uv pip install --upgrade pyright types-docutils
+                    '';
+                  })
+                ];
+                shellHook = ''
+                  if [ ! -d ${venvPath} ]; then
+                    printf "[shell_hook] Creating ${venvPath}\n"
+                    uv venv ${venvPath}
+                  fi
+                  printf "[shell_hook] Activating ${venvPath}\n"
+                  source ${venvPath}/bin/activate
+                  printf "[shell_hook] Helper commands available:\n"
+                  compgen -c llvmdev- | sed 's/^/\t/'
+                '';
+              };
             rock1030 =
               let
                 family = "gfx103X-all";
@@ -112,6 +137,7 @@
                   flex
                   gfortran # also includes g++, etc.
                   git
+                  libdrm
                   libtool
                   ncurses # just for libtinfo, since therock builds its own ncurses
                   ninja
@@ -157,15 +183,11 @@
                 HSA_OVERRIDE_GFX_VERSION = "10.3.0";
                 CM_CONF_EXTRA = ''
                   -DTHEROCK_AMDGPU_FAMILIES=gfx103X-all
-                  -DTHEROCK_ENABLE_ALL=OFF
-                  -DTHEROCK_ENABLE_COMPILER=ON
-                  -DTHEROCK_ENABLE_ROCGDB=ON
                   -DTHEROCK_USE_LLD=ON
                   -DFLANG_PARALLEL_COMPILE_JOBS=16
                   -DLLVM_PARALLEL_LINK_JOBS=16
                 '';
                 shellHook = ''
-                  cd "$FLAKE_ROOT"
                   if [ ! -d ${venvPath} ]; then
                     printf "[shell_hook] Creating ${venvPath}\n"
                     python3 ./build_tools/setup_venv.py ${venvPath} \
