@@ -46,6 +46,10 @@ vim.api.nvim_clear_autocmds({ group = 'nvim.terminal', event = 'TermClose' })
 vim.api.nvim_create_autocmd('TermClose', {
   group = term_group,
   callback = function()
+    -- Telescope uses terminal buffers too, leave those alone
+    if vim.bo.filetype:match("^Telescope.*") then
+      return
+    end
     -- FIXME: mimic bbye more accurately by finding all other active windows
     -- with the same now-closing term buffer and giving them a new buffer too.
     --

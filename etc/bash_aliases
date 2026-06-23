@@ -7,7 +7,7 @@
 
 SHNAME=$(basename $SHELL)
 
-PATH="$HOME/.local/share/bob/nvim-bin:$HOME/.cargo/bin:$HOME/.local/bin:$PATH"
+PATH="$HOME/.local/share/bob/nvim-bin:$HOME/.local/bin:$PATH"
 hash starship >/dev/null 2>&1 && eval "$(starship init $SHNAME)"
 [[ $SHNAME = bash && -f ~/.bash-preexec.sh ]] && source ~/.bash-preexec.sh
 if hash atuin >/dev/null 2>&1; then

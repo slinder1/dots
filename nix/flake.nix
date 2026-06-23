@@ -85,6 +85,7 @@
               lua-language-server
               rust-analyzer
               rustc
+              rustfmt
             ];
           };
           devShells = {
