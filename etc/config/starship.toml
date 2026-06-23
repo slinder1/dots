@@ -2,7 +2,6 @@ format = """
 $username\
 $hostname\
 $directory\
-$singularity\
 $memory_usage\
 $git_branch\
 $git_commit\
@@ -51,6 +50,10 @@ disabled = true
 [env_var.CM_CFG]
 style = 'green'
 symbol = ' '
+format = '[$symbol$env_value]($style) '
+[env_var.APPTAINER_NAME]
+style = 'green'
+symbol = '📦'
 format = '[$symbol$env_value]($style) '
 [nix_shell]
 symbol = '❄️ '

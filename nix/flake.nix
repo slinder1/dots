@@ -13,8 +13,14 @@
       url = "github:nix-community/home-manager";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    cm.url = "github:ROCm/cm";
-    gd.url = "github:slinder1/gd";
+    cm = {
+      url = "github:ROCm/cm";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    cgh = {
+      url = "github:slinder1/cgh";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs =
@@ -23,7 +29,7 @@
       easy-hosts,
       home-manager,
       cm,
-      gd,
+      cgh,
       ...
     }:
     flake-parts.lib.mkFlake { inherit inputs; } {
@@ -68,7 +74,10 @@
               uv
               xxd
               cm.packages.${system}.cm
-              gd.packages.${system}.gd
+              cgh.packages.${system}.cgh
+            ];
+            apptainer = with pkgs; [
+              apptainer
             ];
             lsp = with pkgs; [
               cargo
@@ -122,8 +131,14 @@
               };
             rock1030 =
               let
-                family = "gfx103X-all";
-                venvPath = ".venv.gfx103X-all";
+                #family = "gfx103X-all";
+                #venvPath = ".venv.gfx103X-all";
+                family = "";
+                venvPath = ".venv";
+                libraryPath = pkgs.lib.makeLibraryPath [
+                  pkgs.stdenv.cc.cc.lib
+                  pkgs.libdrm
+                ];
               in
               pkgs.mkShellNoCC {
                 name = "rock";
@@ -132,18 +147,21 @@
                   automake
                   bison
                   ccache
-                  cmake
+                  #cmake
                   dvc
                   flex
                   gfortran # also includes g++, etc.
+                  glibc
                   git
                   libdrm
                   libtool
+                  libGL
                   ncurses # just for libtinfo, since therock builds its own ncurses
                   ninja
                   pkg-config
                   python3
                   texinfo
+                  uv
                   (stdenv.mkDerivation rec {
                     pname = "patchelf-rocm";
                     version = "d0f70eea5397606c486857e0a105e53ec123904a";
@@ -167,9 +185,9 @@
                     name = "therock-update-python";
                     text = ''
                       set -x
-                      pip install --upgrade pip
-                      pip install --upgrade -r requirements.txt
-                      pip install --upgrade 'rocm[libraries,devel]' --index-url=https://rocm.nightlies.amd.com/v2/${family}
+                      uv pip install --upgrade -r requirements.txt
+                      uv pip install cmake==3.28.3
+                      #uv pip install --upgrade 'rocm[libraries,devel]' --index-url=https://rocm.nightlies.amd.com/v2/${family}
                     '';
                   })
                   (pkgs.writeShellApplication {
@@ -180,6 +198,9 @@
                     '';
                   })
                 ];
+                NIX_CFLAGS_COMPILE = "-I${pkgs.libdrm.dev}/include";
+                LD_LIBRARY_PATH = libraryPath;
+                CMAKE_PREFIX_PATH = libraryPath;
                 HSA_OVERRIDE_GFX_VERSION = "10.3.0";
                 CM_CONF_EXTRA = ''
                   -DTHEROCK_AMDGPU_FAMILIES=gfx103X-all
@@ -190,8 +211,8 @@
                 shellHook = ''
                   if [ ! -d ${venvPath} ]; then
                     printf "[shell_hook] Creating ${venvPath}\n"
-                    python3 ./build_tools/setup_venv.py ${venvPath} \
-                      --packages 'rocm[libraries,devel]' --index-name nightly --index-subdir ${family}
+                    python3 ./build_tools/setup_venv.py ${venvPath} --use-uv #\
+                      #--packages 'rocm[libraries,devel]' --index-name nightly --index-subdir ${family}
                   fi
                   printf "[shell_hook] Activating ${venvPath}\n"
                   source ${venvPath}/bin/activate
@@ -206,6 +227,19 @@
                   compgen -c therock- | sed 's/^/\t/'
                 '';
               };
+            rust = pkgs.mkShell {
+              packages = with pkgs; [
+                rustc
+                cargo
+                rust-analyzer
+              ];
+              nativeBuildInputs = with pkgs; [
+                pkg-config
+              ];
+              buildInputs = with pkgs; [
+                openssl
+              ];
+            };
           };
           legacyPackages.homeConfigurations = pkgs.lib.genAttrs [ "scott" "user" "slinder1" ] (
             user:

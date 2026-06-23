@@ -10,15 +10,6 @@ vim.opt.colorcolumn = { '81', '82' }
 vim.opt.signcolumn = 'yes:1'
 vim.opt.number = true
 vim.opt.scrolloff = 2
-vim.api.nvim_create_autocmd('TermOpen', {
-  callback = function()
-    vim.opt_local.signcolumn = 'no'
-    vim.opt_local.number = false
-    vim.opt_local.scrolloff = 0
-    vim.cmd('DisableWhitespace')
-    vim.cmd('keepalt file term-' .. vim.fn.rand())
-  end,
-})
 
 vim.opt.joinspaces = false
 vim.opt.formatoptions:append '2'
@@ -37,6 +28,38 @@ vim.opt.hlsearch = false
 
 vim.opt.comments:remove '://'
 vim.opt.comments:append { ':///', '://' }
+
+local term_group = vim.api.nvim_create_augroup('UserTerm', {})
+vim.api.nvim_create_autocmd('TermOpen', {
+  group = term_group,
+  callback = function()
+    vim.opt_local.signcolumn = 'no'
+    vim.opt_local.number = false
+    vim.opt_local.scrolloff = 0
+    vim.cmd('DisableWhitespace')
+    vim.cmd('keepalt file term-' .. vim.fn.rand())
+  end,
+})
+-- Replace the default TermClose behavior in the nvim.terminal augroup with our
+-- own vim-bbye-like behavior
+vim.api.nvim_clear_autocmds({ group = 'nvim.terminal', event = 'TermClose' })
+vim.api.nvim_create_autocmd('TermClose', {
+  group = term_group,
+  callback = function()
+    -- FIXME: mimic bbye more accurately by finding all other active windows
+    -- with the same now-closing term buffer and giving them a new buffer too.
+    --
+    -- Alternatively, scrape the scrollback into a temporary buffer a-la
+    -- discreesteakmachine in
+    -- https://www.reddit.com/r/neovim/comments/1se2x4q/differences_in_how_terminal_closing_is_handled/
+    vim.cmd.enew()
+    vim.cmd.bd('#')
+    vim.bo.swapfile = false
+    vim.bo.bufhidden = 'wipe'
+    vim.bo.buftype = ''
+    vim.bo.buflisted = false
+  end,
+})
 
 -- vim.opt.title = true
 -- vim.opt.titlestring = vim.fs.basename(vim.fn.getcwd())
@@ -58,7 +81,7 @@ vim.g.neovide_detach_on_quit = 'always_detach'
 vim.g.neovide_hide_mouse_when_typing = true
 vim.g.neovide_cursor_animation_length = 0
 vim.g.neovide_scroll_animation_length = 0.1
-local start_scale = 0.9;
+local start_scale = 0.9
 vim.g.neovide_scale_factor = start_scale
 local change_scale_factor = function(delta)
   vim.g.neovide_scale_factor = vim.g.neovide_scale_factor * delta
