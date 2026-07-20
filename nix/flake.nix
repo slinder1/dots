@@ -96,6 +96,27 @@
             };
           };
         };
+        llvm-build =
+          { pkgs, system, ... }:
+          {
+            systemd.user.services."llvm-build@" = {
+              Unit.Description = "build llvm in %h/llvm-project/%i";
+              Service = {
+                Type = "oneshot";
+                WorkingDirectory = "%h/llvm-project/%i";
+                StandardOutput = "journal";
+                StandardError = "journal";
+                ExecStart = "${pkgs.nix}/bin/nix develop --impure path:${self.outPath}#llvm --command ${pkgs.writeShellScript "llvm-build" ''
+                  rm -rf build || exit 1
+                  git fetch https://github.com/llvm/llvm-project.git main || exit 1
+                  git switch --detach FETCH_HEAD || exit 1
+                  cm c || exit 1
+                  cm b || exit 1
+                  cm l -ga || exit 1
+                ''}";
+              };
+            };
+          };
       };
       perSystem =
         {
@@ -138,6 +159,8 @@
               pkgs.mkShell {
                 name = "llvm";
                 packages = with pkgs; [
+                  cm.packages.${system}.cm
+                  cgh.packages.${system}.cgh
                   ccache
                   cmake
                   git
