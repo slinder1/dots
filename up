@@ -42,7 +42,7 @@ darwin() (
 
 home() (
   nix_qol ||bail
-  nix --experimental-features 'flakes nix-command' run 'nixpkgs#home-manager' -- switch --impure --flake "$ROOT/nix#$USER" ||bail
+  nix --experimental-features 'flakes nix-command' run 'nixpkgs#home-manager' -- switch --impure --flake "$ROOT/nix#$USER" --show-trace ||bail
 )
 
 etc() (

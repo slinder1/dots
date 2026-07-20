@@ -2,12 +2,11 @@
   lib,
   pkgs,
   self',
+  homeModules,
   ...
 }:
 {
-  home.packages =
-    with self'.package-lists;
-    lib.concatLists [
-      core
-    ];
+  imports = with homeModules; [
+    core
+  ];
 }

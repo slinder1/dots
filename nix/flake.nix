@@ -25,6 +25,7 @@
 
   outputs =
     inputs@{
+      self,
       flake-parts,
       easy-hosts,
       home-manager,
@@ -35,29 +36,17 @@
     flake-parts.lib.mkFlake { inherit inputs; } {
       imports = [
         easy-hosts.flakeModule
-        ./modules/flake/package-lists.nix
+        home-manager.flakeModules.home-manager
       ];
       systems = [
         "x86_64-linux"
         "aarch64-darwin"
       ];
-      perSystem =
-        {
-          self',
-          inputs',
-          system,
-          ...
-        }:
-        let
-          pkgs = import inputs.nixpkgs {
-            inherit system;
-            config.allowUnfree = true;
-          };
-        in
-        {
-          _module.args.pkgs = pkgs;
-          package-lists = {
-            core = with pkgs; [
+      flake.homeModules = {
+        core =
+          { pkgs, ... }:
+          {
+            home.packages = with pkgs; [
               atuin
               bat
               bob-nvim
@@ -68,18 +57,26 @@
               fzf
               gh
               git
+              hyperfine
               ov
               ripgrep
               starship
               uv
               xxd
+            ];
+          };
+        core-src =
+          { pkgs, system, ... }:
+          {
+            home.packages = with pkgs; [
               cm.packages.${system}.cm
               cgh.packages.${system}.cgh
             ];
-            apptainer = with pkgs; [
-              apptainer
-            ];
-            lsp = with pkgs; [
+          };
+        lsp =
+          { pkgs, ... }:
+          {
+            home.packages = with pkgs; [
               cargo
               clang-tools
               lua-language-server
@@ -88,6 +85,40 @@
               rustfmt
             ];
           };
+      };
+      perSystem =
+        {
+          self',
+          inputs',
+          system,
+          lib,
+          ...
+        }:
+        let
+          pkgs = import inputs.nixpkgs {
+            inherit system;
+            config.allowUnfree = true;
+          };
+        in
+        {
+          _module.args.pkgs = pkgs;
+          legacyPackages.homeConfigurations = pkgs.lib.genAttrs [ "scott" "user" "slinder1" ] (
+            user:
+            home-manager.lib.homeManagerConfiguration {
+              inherit pkgs;
+              extraSpecialArgs = {
+                inherit self' inputs' system;
+                homeModules = self.homeModules;
+              };
+              modules = (lib.optional (builtins.pathExists ~/.config/home.nix) ~/.config/home.nix) ++ [
+                {
+                  home.username = user;
+                  home.homeDirectory = ~/.;
+                  home.stateVersion = "25.11";
+                }
+              ];
+            }
+          );
           devShells = {
             llvm =
               let
@@ -242,17 +273,6 @@
               ];
             };
           };
-          legacyPackages.homeConfigurations = pkgs.lib.genAttrs [ "scott" "user" "slinder1" ] (
-            user:
-            home-manager.lib.homeManagerConfiguration {
-              inherit pkgs;
-              modules = [ ./home/user.nix ];
-              extraSpecialArgs = {
-                inherit self' inputs';
-                username = user;
-              };
-            }
-          );
           formatter = pkgs.nixfmt-tree;
         };
       easy-hosts = {

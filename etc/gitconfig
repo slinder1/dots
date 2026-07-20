@@ -78,17 +78,17 @@
 
     ## [r]ebase...
     #
-    r = rebase --reapply-cherry-picks --empty=keep
+    r = rebase
     # [i]nteractive
-    ri = rebase --interactive --reapply-cherry-picks --empty=keep
+    ri = rebase --interactive
     # [c]continue
     rc = rebase --continue
     # [r]ebase [a]utomatically based on merge-base with HEAD ref following the convention <user>/<base>/<feature>
-    ra = "!f() { git rebase --reapply-cherry-picks --empty=keep \"$@\" $(git merge-base HEAD $(git vab)); }; f"
+    ra = "!f() { git rebase \"$@\" $(git merge-base HEAD $(git vab)); }; f"
     # ra but [i]nteractive
     rai = "!f() { git ra --interactive \"$@\"; }; f"
     # [p]ull base, then [r]ebase [a]utomatically based on HEAD ref following the convention feat/<base>/<feature>
-    pra = "!f() { git fetch -v $(printf '%s:%s' \"$(git for-each-ref --format='%(upstream:short)' refs/heads/$(git vab) | tr / ' ')\" $(git vab)) && git rebase --reapply-cherry-picks --empty=keep \"$@\" $(git vab); }; f"
+    pra = "!f() { git fetch -v $(printf '%s:%s' \"$(git for-each-ref --format='%(upstream:short)' refs/heads/$(git vab) | tr / ' ')\" $(git vab)) && git rebase \"$@\" $(git vab); }; f"
     ## [c]ommit...
     #
     c = commit -vv

@@ -8,11 +8,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1781815403,
-        "narHash": "sha256-5tntVkY0L3xZoFWn/sQksj5+RI3JMzYhso8qHMZXvQM=",
+        "lastModified": 1782419056,
+        "narHash": "sha256-90vn32NUrUqDyKzVH5RFf6yaToHomN1V8ov3hR8HuWM=",
         "owner": "slinder1",
         "repo": "cgh",
-        "rev": "5e45de961ed098372218dca61e9c6831d25e86a7",
+        "rev": "50e8ccb453a62240779cf2076c2d9ebef9fd286f",
         "type": "github"
       },
       "original": {
