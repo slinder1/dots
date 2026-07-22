@@ -134,21 +134,20 @@
         in
         {
           _module.args.pkgs = pkgs;
-          legacyPackages.homeConfigurations = pkgs.lib.genAttrs [ "scott" "user" "slinder1" ] (
+          legacyPackages.homeConfigurations = pkgs.lib.genAttrs [ "user" "scott" "slinder1" ] (
             user:
             home-manager.lib.homeManagerConfiguration {
               inherit pkgs;
               extraSpecialArgs = {
-                inherit self' inputs' system;
+                inherit
+                  self'
+                  inputs'
+                  system
+                  user
+                  ;
                 homeModules = self.homeModules;
               };
-              modules = (lib.optional (builtins.pathExists ~/.config/home.nix) ~/.config/home.nix) ++ [
-                {
-                  home.username = user;
-                  home.homeDirectory = ~/.;
-                  home.stateVersion = "25.11";
-                }
-              ];
+              modules = [ ./home.nix ];
             }
           );
           devShells = {
