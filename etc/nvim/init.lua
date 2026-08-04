@@ -29,6 +29,8 @@ vim.opt.hlsearch = false
 vim.opt.comments:remove '://'
 vim.opt.comments:append { ':///', '://' }
 
+require('vim._core.ui2').enable({})
+
 local term_group = vim.api.nvim_create_augroup('UserTerm', {})
 vim.api.nvim_create_autocmd('TermOpen', {
   group = term_group,
@@ -46,8 +48,9 @@ vim.api.nvim_clear_autocmds({ group = 'nvim.terminal', event = 'TermClose' })
 vim.api.nvim_create_autocmd('TermClose', {
   group = term_group,
   callback = function()
-    -- Telescope uses terminal buffers too, leave those alone
-    if vim.bo.filetype:match("^Telescope.*") then
+    -- Some plugins use terminal buffers, but manage their lifetime themselves.
+    -- Ignore these (or try to, not sure this is the best way to do this)
+    if not vim.bo.buflisted or vim.b.guh or vim.bo.filetype:match("^Telescope.*") then
       return
     end
     -- FIXME: mimic bbye more accurately by finding all other active windows
@@ -65,6 +68,10 @@ vim.api.nvim_create_autocmd('TermClose', {
   end,
 })
 
+local termfeatures = vim.g.termfeatures or {}
+termfeatures.osc52 = false
+vim.g.termfeatures = termfeatures
+
 -- vim.opt.title = true
 -- vim.opt.titlestring = vim.fs.basename(vim.fn.getcwd())
 -- vim.api.nvim_create_autocmd('DirChanged', {
@@ -73,8 +80,12 @@ vim.api.nvim_create_autocmd('TermClose', {
 --     -- TODO: update titlestring
 --   end,
 -- })
+
+
 vim.g.neovide_fullscreen = true
 vim.keymap.set("n", "<M-CR>", function() vim.g.neovide_fullscreen = not vim.g.neovide_fullscreen end)
+vim.o.winborder = 'rounded'
+vim.g.neovide_floating_corner_radius = 0.1
 vim.opt.guifont = 'CommitMono Nerd Font Mono:h12:w0:#e-antialias:#h-full'
 local get_hl = function(name)
   return vim.api.nvim_get_hl(0, {id=vim.api.nvim_get_hl_id_by_name(name)})
@@ -96,6 +107,7 @@ vim.keymap.set("n", "<C-->", function() change_scale_factor(1/1.25) end)
 
 local modes = { 'n', 't', 'i' }
 vim.keymap.set(modes, '<C-a>c', function() vim.cmd.tabnew() end)
+vim.keymap.set(modes, '<C-a>d', function() vim.cmd.tabclose() end)
 vim.keymap.set(modes, '<C-a>n', function() vim.cmd.tabnext() end)
 vim.keymap.set(modes, '<C-a>p', function() vim.cmd.tabprev() end)
 for i = 1, 9 do
@@ -170,6 +182,8 @@ local spec = {
       vim.g.sonokai_dim_inactive_windows = 0
       vim.g.sonokai_diagnostic_virtual_text = 'colored'
       vim.cmd.colorscheme('sonokai')
+      vim.api.nvim_set_hl(0, 'TinyCmdlineBorder', { link = 'TinyCmdlineNormal' })
+      vim.api.nvim_set_hl(0, 'GuhDiffFile', { link = 'DiffChange' })
     end,
   },
   {
@@ -426,12 +440,29 @@ local spec = {
       leap.opts.labels = 'hjklhgfdsaqwerpoizxcv/.,mn'
     end,
   },
-  'sindrets/diffview.nvim',
   'airblade/vim-gitgutter',
   'ntpeters/vim-better-whitespace',
   'tpope/vim-abolish',
   'tpope/vim-fugitive',
   'tpope/vim-sleuth',
+  {
+    'justinmk/guh.nvim',
+    lazy = false,
+    keys = {
+      { 'go', '<cmd>tab Guh .<cr>', 'n' },
+    },
+  },
+  'barrettruth/diffs.nvim',
+  'MeanderingProgrammer/render-markdown.nvim',
+  {
+    'rachartier/tiny-cmdline.nvim',
+    init = function()
+      vim.o.cmdheight = 0
+      vim.g.tiny_cmdline = {
+        width = { value = "70%", max = 1000, },
+      }
+    end,
+  },
 }
 
 require('lazy').setup({
