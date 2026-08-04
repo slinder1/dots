@@ -90,8 +90,9 @@
             Unit.Description = "nvim daemon";
             Install.WantedBy = [ "default.target" ];
             Service = {
-              ExecStartPre = "/usr/bin/rm -f %h/.local/state/nvim.sock";
-              ExecStart = "/bin/bash -l -c '. %h/.bash_aliases && exec %h/.local/share/bob/nvim-bin/nvim --listen %h/.local/state/nvim.sock --headless'";
+              RuntimeDirectory = "nvimd";
+              ExecStartPre = "/usr/bin/rm -f $RUNTIME_DIRECTORY/sock";
+              ExecStart = "/bin/bash -l -c '. %h/.bash_aliases && exec %h/.local/share/bob/nvim-bin/nvim --listen $RUNTIME_DIRECTORY/sock --headless'";
               Restart = "always";
             };
           };
