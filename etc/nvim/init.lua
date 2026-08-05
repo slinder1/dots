@@ -31,10 +31,20 @@ vim.opt.comments:append { ':///', '://' }
 
 require('vim._core.ui2').enable {}
 
+
+-- Some plugins use terminal buffers, leave them be
+local term_likely_managed = function(buf)
+  local b = vim.b[buf]
+  local bo = vim.bo[buf]
+  return not bo.buflisted or b.guh or bo.filetype:match("^Telescope.*")
+end
 local term_group = vim.api.nvim_create_augroup('UserTerm', {})
 vim.api.nvim_create_autocmd('TermOpen', {
   group = term_group,
-  callback = function()
+  callback = function(ev)
+    if term_likely_managed(ev.buf) then
+      return
+    end
     vim.opt_local.signcolumn = 'no'
     vim.opt_local.number = false
     vim.opt_local.scrolloff = 0
@@ -47,10 +57,8 @@ vim.api.nvim_create_autocmd('TermOpen', {
 vim.api.nvim_clear_autocmds({ group = 'nvim.terminal', event = 'TermClose' })
 vim.api.nvim_create_autocmd('TermClose', {
   group = term_group,
-  callback = function()
-    -- Some plugins use terminal buffers, but manage their lifetime themselves.
-    -- Ignore these (or try to, not sure this is the best way to do this)
-    if not vim.bo.buflisted or vim.b.guh or vim.bo.filetype:match("^Telescope.*") then
+  callback = function(ev)
+    if term_likely_managed(ev.buf) then
       return
     end
     -- FIXME: mimic bbye more accurately by finding all other active windows
