@@ -61,6 +61,7 @@
               ov
               ripgrep
               starship
+              tree-sitter
               uv
               xxd
             ];

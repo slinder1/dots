@@ -29,7 +29,7 @@ vim.opt.hlsearch = false
 vim.opt.comments:remove '://'
 vim.opt.comments:append { ':///', '://' }
 
-require('vim._core.ui2').enable({})
+require('vim._core.ui2').enable {}
 
 local term_group = vim.api.nvim_create_augroup('UserTerm', {})
 vim.api.nvim_create_autocmd('TermOpen', {
@@ -182,7 +182,6 @@ local spec = {
       vim.g.sonokai_dim_inactive_windows = 0
       vim.g.sonokai_diagnostic_virtual_text = 'colored'
       vim.cmd.colorscheme('sonokai')
-      vim.api.nvim_set_hl(0, 'TinyCmdlineBorder', { link = 'TinyCmdlineNormal' })
       vim.api.nvim_set_hl(0, 'GuhDiffFile', { link = 'DiffChange' })
     end,
   },
@@ -368,11 +367,11 @@ local spec = {
           vim.keymap.set('n', 'gd', vim.lsp.buf.definition, bufopts)
           vim.keymap.set('n', 'K', vim.lsp.buf.hover, bufopts)
           vim.keymap.set('n', 'gi', vim.lsp.buf.implementation, bufopts)
+          vim.keymap.set('n', 'gr', vim.lsp.buf.references, bufopts)
           vim.keymap.set('n', '<C-k>', vim.lsp.buf.signature_help, bufopts)
           vim.keymap.set('n', '<space>lD', vim.lsp.buf.type_definition, bufopts)
           vim.keymap.set('n', '<space>lr', vim.lsp.buf.rename, bufopts)
           vim.keymap.set('n', '<space>la', vim.lsp.buf.code_action, bufopts)
-          vim.keymap.set('n', 'gr', vim.lsp.buf.references, bufopts)
           vim.keymap.set({ 'n', 'v' }, '<space>li', function()
             local opts = { bufnr = 0 }
             vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled(opts), opts)
@@ -455,13 +454,16 @@ local spec = {
   'barrettruth/diffs.nvim',
   'MeanderingProgrammer/render-markdown.nvim',
   {
-    'rachartier/tiny-cmdline.nvim',
-    init = function()
-      vim.o.cmdheight = 0
-      vim.g.tiny_cmdline = {
-        width = { value = "70%", max = 1000, },
-      }
-    end,
+    'nvim-treesitter/nvim-treesitter-context',
+    dependencies = { 'nvim-treesitter/nvim-treesitter' },
+    lazy = false,
+    keys = {
+      { '<space>lc', '<cmd>TSContext toggle<cr>', { 'n', 'v' } },
+    },
+    opts = {
+      enable = false,
+      mode = 'topline',
+    },
   },
 }
 
