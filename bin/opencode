@@ -7,7 +7,7 @@ read -p "Are you OK with everything under $PWD being read-write in the sandbox? 
 [[ $yn =~ ^[yY]$ ]] || exit 1
 
 REALBIN="$HOME/.opencode/bin/opencode"
-RW_BINDS=("$HOME/.config/opencode" "$HOME/.local/share/opencode" "$HOME/.local/state/opencode" "$HOME/.cargo")
+RW_BINDS=("$HOME/.config/opencode" "$HOME/.local/share/opencode" "$HOME/.local/state/opencode" "$HOME/.cache/opencode" "$HOME/.cargo")
 # use tmpfs binds to hide some paths/mounts:
 # * we don't need any interop with anything keeping pid files or sockets in /run
 # * /mnt/c would provide an escape mechanism for accessing the host, including
@@ -17,12 +17,16 @@ TMPFS_BINDS=(/tmp /run /mnt/c "$HOME/.ssh")
 
 RW_BINDS_ARGS=()
 for rw_bind in "${RW_BINDS[@]}"; do
-  RW_BINDS_ARGS+=(--bind "$rw_bind" "$rw_bind")
+  if [[ -d "$rw_bind" ]]; then
+    RW_BINDS_ARGS+=(--bind "$rw_bind" "$rw_bind")
+  fi
 done
 
 TMPFS_BINDS_ARGS=()
 for tmpfs_bind in "${TMPFS_BINDS[@]}"; do
-  TMPFS_BINDS_ARGS+=(--tmpfs "$tmpfs_bind")
+  if [[ -d "$tmpfs_bind" ]]; then
+    TMPFS_BINDS_ARGS+=(--tmpfs "$tmpfs_bind")
+  fi
 done
 
 bwrap \
