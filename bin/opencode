@@ -1,0 +1,38 @@
+#!/bin/bash
+
+printf "You're running the correct, bubblewrapped opencode!\n"
+printf "If you ever fail to see this message you are running opencode WITHOUT A SANDBOX.\n\n"
+read -p "Are you OK with everything under $PWD being read-write in the sandbox? [y/N] " yn
+
+[[ $yn =~ ^[yY]$ ]] || exit 1
+
+REALBIN="$HOME/.opencode/bin/opencode"
+RW_BINDS=("$HOME/.config/opencode" "$HOME/.local/share/opencode" "$HOME/.local/state/opencode" "$HOME/.cargo")
+# use tmpfs binds to hide some paths/mounts:
+# * we don't need any interop with anything keeping pid files or sockets in /run
+# * /mnt/c would provide an escape mechanism for accessing the host, including
+#   openssh keys saved in the windows registry via ssh.exe
+# * any (hopefully encrypted!) keys in the local wsl ~/.ssh
+TMPFS_BINDS=(/tmp /run /mnt/c "$HOME/.ssh")
+
+RW_BINDS_ARGS=()
+for rw_bind in "${RW_BINDS[@]}"; do
+  RW_BINDS_ARGS+=(--bind "$rw_bind" "$rw_bind")
+done
+
+TMPFS_BINDS_ARGS=()
+for tmpfs_bind in "${TMPFS_BINDS[@]}"; do
+  TMPFS_BINDS_ARGS+=(--tmpfs "$tmpfs_bind")
+done
+
+bwrap \
+  --die-with-parent \
+  --ro-bind / / \
+  --dev /dev \
+  --proc /proc \
+  --bind "$PWD" "$PWD" \
+  --chdir "$PWD" \
+  "${RW_BINDS_ARGS[@]}" \
+  "${TMPFS_BINDS_ARGS[@]}" \
+  --setenv OPENCODE_DISABLE_LSP_DOWNLOAD true \
+  -- "$REALBIN" "$@"
