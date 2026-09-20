@@ -17,8 +17,8 @@
       url = "github:ROCm/cm";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    cgh = {
-      url = "github:slinder1/cgh";
+    praddle = {
+      url = "github:slinder1/praddle";
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };
@@ -30,7 +30,7 @@
       easy-hosts,
       home-manager,
       cm,
-      cgh,
+      praddle,
       ...
     }:
     flake-parts.lib.mkFlake { inherit inputs; } {
@@ -70,8 +70,8 @@
           { pkgs, system, ... }:
           {
             home.packages = with pkgs; [
-              cm.packages.${system}.cm
-              cgh.packages.${system}.cgh
+              cm.packages.${system}.default
+              praddle.packages.${system}.default
             ];
           };
         lsp =
@@ -161,8 +161,6 @@
               pkgs.mkShell.override { stdenv = pkgs.clangStdenv; } {
                 name = "llvm";
                 packages = with pkgs; [
-                  cm.packages.${system}.cm
-                  cgh.packages.${system}.cgh
                   ccache
                   cmake
                   git
