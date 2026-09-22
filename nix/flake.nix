@@ -99,8 +99,8 @@
               Install.WantedBy = [ "default.target" ];
               Service = {
                 RuntimeDirectory = "nvimd";
-                ExecStartPre = "/bin/rm -f $RUNTIME_DIRECTORY/sock";
-                ExecStart = "/bin/bash -l -c '. %h/.bash_aliases && exec ${pkgs.neovim}/bin/nvim --listen $RUNTIME_DIRECTORY/sock --headless -c \"let &titlestring = hostname()\"'";
+                ExecStartPre = "/bin/rm -f \${RUNTIME_DIRECTORY}/sock";
+                ExecStart = "/bin/bash -l -c '. %h/.bash_aliases && exec ${pkgs.neovim}/bin/nvim --listen \${RUNTIME_DIRECTORY}/sock --headless -c \"let &titlestring = hostname()\"'";
                 Restart = "always";
               };
             };
