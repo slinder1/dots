@@ -2,9 +2,13 @@
   description = "scott's dots";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
     flake-parts.url = "github:hercules-ci/flake-parts";
     easy-hosts.url = "github:tgirlcloud/easy-hosts";
+    neovim-nightly-overlay = {
+      url = "github:nix-community/neovim-nightly-overlay";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     nix-darwin = {
       url = "github:nix-darwin/nix-darwin/master";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -28,6 +32,7 @@
       self,
       flake-parts,
       easy-hosts,
+      neovim-nightly-overlay,
       home-manager,
       cm,
       praddle,
@@ -49,7 +54,6 @@
             home.packages = with pkgs; [
               atuin
               bat
-              bob-nvim
               ccache
               coreutils
               delta
@@ -58,6 +62,7 @@
               gh
               git
               hyperfine
+              neovim
               ov
               ripgrep
               starship
@@ -86,18 +91,20 @@
               rustfmt
             ];
           };
-        nvimd = {
-          systemd.user.services.nvimd = {
-            Unit.Description = "nvim daemon";
-            Install.WantedBy = [ "default.target" ];
-            Service = {
-              RuntimeDirectory = "nvimd";
-              ExecStartPre = "/bin/rm -f $RUNTIME_DIRECTORY/sock";
-              ExecStart = "/bin/bash -l -c '. %h/.bash_aliases && exec %h/.local/share/bob/nvim-bin/nvim --listen $RUNTIME_DIRECTORY/sock --headless -c \"let &titlestring = hostname()\"'";
-              Restart = "always";
+        nvimd =
+          { pkgs, ... }:
+          {
+            systemd.user.services.nvimd = {
+              Unit.Description = "nvim daemon";
+              Install.WantedBy = [ "default.target" ];
+              Service = {
+                RuntimeDirectory = "nvimd";
+                ExecStartPre = "/bin/rm -f $RUNTIME_DIRECTORY/sock";
+                ExecStart = "/bin/bash -l -c '. %h/.bash_aliases && exec ${pkgs.neovim}/bin/nvim --listen $RUNTIME_DIRECTORY/sock --headless -c \"let &titlestring = hostname()\"'";
+                Restart = "always";
+              };
             };
           };
-        };
         llvm-build =
           { pkgs, system, ... }:
           {
@@ -149,7 +156,12 @@
                   ;
                 homeModules = self.homeModules;
               };
-              modules = [ ./home.nix ];
+              modules = [
+                {
+                  nixpkgs.overlays = [ neovim-nightly-overlay.overlays.default ];
+                }
+                ./home.nix
+              ];
             }
           );
           devShells = {

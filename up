@@ -25,14 +25,18 @@ lix() (
 )
 
 # quality-of-life hacks for darwin/home
-nix_qol() (
+nix_qol() {
   mkdir -p ~/.config ||bail
   # we are only impure for this single "local" config file, maybe revisit a
   # hosts-based approach, but seems unecessary
   [ -e ~/.config/home.nix ] || cp "$ROOT/nix/template.nix" ~/.config/home.nix ||bail
+  # work around github API limits
+  if [ -n "$GITHUB_TOKEN" ]; then
+    export NIX_CONFIG="access-tokens = github.com=$GITHUB_TOKEN"
+  fi
   # not realizing an unstaged change is being ignored is infuriating
-  git -C "$ROOT" add -A
-)
+  git -C "$ROOT" add -A ||bail
+}
 
 darwin() (
   nix_qol ||bail
@@ -82,10 +86,6 @@ core() (
   etc ||bail
   bin ||bail
   bash_preexec ||bail
-)
-
-bob() (
-  "$(which bob)" use 0.11.5 >/dev/null || bail
 )
 
 for cmd in "$@"; do
