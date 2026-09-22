@@ -100,7 +100,7 @@
               Service = {
                 RuntimeDirectory = "nvimd";
                 ExecStartPre = "/bin/rm -f \${RUNTIME_DIRECTORY}/sock";
-                ExecStart = "/bin/bash -l -c '. %h/.bash_aliases && exec ${pkgs.neovim}/bin/nvim --listen \${RUNTIME_DIRECTORY}/sock --headless -c \"let &titlestring = hostname()\"'";
+                ExecStart = "/bin/bash -l -c '. %h/.bash_aliases && exec ${pkgs.neovim}/bin/nvim --listen \${RUNTIME_DIRECTORY}/sock --headless -c \"let &titlestring = hostname() | set title\"'";
                 Restart = "always";
               };
             };
