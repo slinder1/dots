@@ -460,7 +460,6 @@ local spec = {
     },
   },
   'barrettruth/diffs.nvim',
-  'MeanderingProgrammer/render-markdown.nvim',
   {
     'nvim-treesitter/nvim-treesitter-context',
     dependencies = { 'nvim-treesitter/nvim-treesitter' },

@@ -7,13 +7,14 @@ read -p "Are you OK with everything under $PWD being read-write in the sandbox? 
 [[ $yn =~ ^[yY]$ ]] || exit 1
 
 REALBIN="$HOME/.opencode/bin/opencode"
-RW_BINDS=("$HOME/.config/opencode" "$HOME/.local/share/opencode" "$HOME/.local/state/opencode" "$HOME/.cache/opencode" "$HOME/.cargo")
+RW_BINDS=("$HOME/.config/opencode" "$HOME/.local/share/opencode" "$HOME/.local/state/opencode" "$HOME/.cache/opencode" "$HOME/.cargo" /nix)
 # use tmpfs binds to hide some paths/mounts:
 # * we don't need any interop with anything keeping pid files or sockets in /run
 # * /mnt/c would provide an escape mechanism for accessing the host, including
 #   openssh keys saved in the windows registry via ssh.exe
 # * any (hopefully encrypted!) keys in the local wsl ~/.ssh
-TMPFS_BINDS=(/tmp /run /mnt/c "$HOME/.ssh")
+# FIXME: /run is needed if systemd resolv stub lives there
+TMPFS_BINDS=(/tmp /mnt/c "$HOME/.ssh")
 
 RW_BINDS_ARGS=()
 for rw_bind in "${RW_BINDS[@]}"; do
@@ -38,5 +39,9 @@ bwrap \
   --chdir "$PWD" \
   "${RW_BINDS_ARGS[@]}" \
   "${TMPFS_BINDS_ARGS[@]}" \
+  --setenv OPENCODE_AUTO_SHARE false \
+  --setenv OPENCODE_DISABLE_AUTOUPDATE true \
   --setenv OPENCODE_DISABLE_LSP_DOWNLOAD true \
+  --setenv OPENCODE_DISABLE_MODELS_FETCH true \
+  --setenv OPENCODE_DISABLE_SHARE true \
   -- "$REALBIN" "$@"
