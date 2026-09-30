@@ -38,6 +38,22 @@
       praddle,
       ...
     }:
+    let
+      uvWrapped =
+        pkgs:
+        pkgs.buildFHSEnv {
+          name = "uv";
+          runScript = "${pkgs.uv}/bin/uv";
+          targetPkgs =
+            pkgs: with pkgs; [
+              stdenv.cc.cc
+              zlib
+              glibc
+              libgcc
+              glib
+            ];
+        };
+    in
     flake-parts.lib.mkFlake { inherit inputs; } {
       imports = [
         easy-hosts.flakeModule
@@ -67,8 +83,8 @@
               ripgrep
               starship
               tree-sitter
-              uv
               xxd
+              (uvWrapped pkgs)
             ];
           };
         core-src =
@@ -179,7 +195,7 @@
                   graphviz
                   llvmPackages.bintools
                   ninja
-                  uv
+                  (uvWrapped pkgs)
                   (python3.withPackages (
                     ps: with ps; [
                       psutils
@@ -244,7 +260,7 @@
                   pkg-config
                   python3
                   texinfo
-                  uv
+                  (uvWrapped pkgs)
                   (stdenv.mkDerivation rec {
                     pname = "patchelf-rocm";
                     version = "d0f70eea5397606c486857e0a105e53ec123904a";

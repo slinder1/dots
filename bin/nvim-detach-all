@@ -20,9 +20,9 @@ def detach_all(sock, args) -> int:
 
 
 def main() -> None:
-    home = environ["HOME"]
+    runtime_dir = environ["XDG_RUNTIME_DIR"]
     args = argv[1:]
-    exit(detach_all(home + "/.local/state/nvim.sock", args))
+    exit(detach_all(runtime_dir + "/nvimd/sock", args))
 
 if __name__ == "__main__":
     main()
