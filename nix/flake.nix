@@ -194,13 +194,9 @@
                   git
                   graphviz
                   llvmPackages.bintools
+                  mold
                   ninja
                   (uvWrapped pkgs)
-                  (python3.withPackages (
-                    ps: with ps; [
-                      psutils
-                    ]
-                  ))
                   (pkgs.writeShellApplication {
                     name = "llvmdev-update-python";
                     text = ''
@@ -215,9 +211,10 @@
                 shellHook = ''
                   export CC=clang
                   export CXX=clang++
+                  export NIX_HARDENING_ENABLE=""
                   export NIX_LDFLAGS="-L${gccForLibs}/lib/gcc/${pkgs.stdenv.targetPlatform.config}/${gccForLibs.version} $NIX_LDFLAGS"
-                  export CFLAGS="-B${gccForLibs}/lib/gcc/${pkgs.stdenv.targetPlatform.config}/${gccForLibs.version} -B ${pkgs.stdenv.cc.libc}/lib $CFLAGS"
-                  export CXXFLAGS="-B${gccForLibs}/lib/gcc/${pkgs.stdenv.targetPlatform.config}/${gccForLibs.version} -B ${pkgs.stdenv.cc.libc}/lib $CXXFLAGS"
+                  export CFLAGS="-B${gccForLibs}/lib/gcc/${pkgs.stdenv.targetPlatform.config}/${gccForLibs.version} -B${pkgs.stdenv.cc.libc}/lib $CFLAGS"
+                  export CXXFLAGS="-B${gccForLibs}/lib/gcc/${pkgs.stdenv.targetPlatform.config}/${gccForLibs.version} -B${pkgs.stdenv.cc.libc}/lib $CXXFLAGS"
                   if [ ! -d ${venvPath} ]; then
                     printf "[shell_hook] Creating ${venvPath}\n"
                     uv venv ${venvPath}
