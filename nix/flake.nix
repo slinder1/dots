@@ -174,11 +174,14 @@
               };
               modules = [
                 {
-                  # We want `nix` commands to use the same (already downloaded)
-                  # nixpkgs so e.g. `nix develop` doesn't first have to download
-                  # the latest nixpkgs archive. Not sure if this is the right
-                  # way, but pinning in the registry seems to work.
-                  nix.registry.nixpkgs.flake = inputs.nixpkgs;
+                  nix.registry = {
+                    # We want `nix` commands to use the same (already cached)
+                    # nixpkgs so e.g. `nix develop` doesn't first have to
+                    # download the latest nixpkgs archive.
+                    nixpkgs.flake = inputs.nixpkgs;
+                    # A shorter shorthand for the nixpkgs flake
+                    np.flake = inputs.nixpkgs;
+                  };
                   nixpkgs.overlays = [ neovim-nightly-overlay.overlays.default ];
                 }
                 ./home.nix
