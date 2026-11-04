@@ -39,6 +39,14 @@
       ...
     }:
     let
+      python =
+        pkgs:
+        pkgs.python3.withPackages (
+          ps: with ps; [
+            pip
+            virtualenv
+          ]
+        );
       uvWrapped =
         pkgs:
         pkgs.buildFHSEnv {
@@ -84,7 +92,7 @@
               starship
               tree-sitter
               xxd
-              (uvWrapped pkgs)
+              (python pkgs)
             ];
           };
         core-src =
@@ -193,6 +201,32 @@
               let
                 venvPath = ".venv";
                 gccForLibs = pkgs.stdenv.cc.cc;
+                bwrapBuildTool =
+                  wrapper: wrapped:
+                  pkgs.writeShellScriptBin wrapper ''
+                    [ -n "${wrapped}" ] && [ -n "''${LLVM_BWRAPPED:-}" ] && exec ${wrapped} "$@"
+                    exec ${pkgs.bubblewrap}/bin/bwrap \
+                      --bind "$LLVM_PROJECT_ROOT" "$LLVM_PROJECT_ROOT" \
+                      --bind "$CCACHE_DIR" "$CCACHE_DIR" \
+                      --ro-bind /nix/store /nix/store \
+                      --bind /tmp /tmp \
+                      --dev /dev \
+                      --proc /proc \
+                      --unshare-net \
+                      --tmpfs /home/user \
+                      --setenv HOME  /home/user \
+                      --setenv LLVM_BWRAPPED 1 \
+                      --chdir "$PWD" \
+                      ${wrapped} "$@"
+                  '';
+                bwrappedBuildTools = pkgs.symlinkJoin {
+                  name = "bwrapped-build-tools";
+                  paths = [
+                    (bwrapBuildTool "llvmdev-bwrap" "")
+                    (bwrapBuildTool "cmake" "${pkgs.cmake}/bin/cmake")
+                    (bwrapBuildTool "ninja" "${pkgs.ninja}/bin/ninja")
+                  ];
+                };
               in
               pkgs.mkShell.override { stdenv = pkgs.clangStdenv; } {
                 name = "llvm";
@@ -204,31 +238,44 @@
                   llvmPackages.bintools
                   mold
                   ninja
-                  (uvWrapped pkgs)
+                  (python pkgs)
                   (pkgs.writeShellApplication {
                     name = "llvmdev-update-python";
                     text = ''
                       set -x
-                      uv pip install --upgrade -r llvm/docs/requirements.txt
-                      uv pip install --upgrade swig
-                      uv pip install --upgrade black=='23.*' darker
-                      uv pip install --upgrade pyright types-docutils
+                      python -m ensurepip --default-pip
+                      pip install --upgrade pip
+                      pip install --upgrade -r llvm/docs/requirements.txt
+                      pip install --upgrade swig black=='23.*' darker pyright types-docutils
                     '';
                   })
                 ];
                 shellHook = ''
+                  if [ ! -d "$PWD/llvm" ]; then
+                    printf 'error: this directory does not appear to be an llvm-project root? exiting...' >&2
+                    exit 1
+                  fi
+                  export LLVM_PROJECT_ROOT="$PWD"
+                  export CCACHE_DIR="$HOME/.cache/ccache"
+                  export CCACHE_BASEDIR="$HOME"
+                  export CCACHE_COMPILERCHECK=none
+                  export PATH="${bwrappedBuildTools}/bin:$PATH"
                   export CC=clang
                   export CXX=clang++
                   export NIX_HARDENING_ENABLE=""
                   export NIX_LDFLAGS="-L${gccForLibs}/lib/gcc/${pkgs.stdenv.targetPlatform.config}/${gccForLibs.version} $NIX_LDFLAGS"
                   export CFLAGS="-B${gccForLibs}/lib/gcc/${pkgs.stdenv.targetPlatform.config}/${gccForLibs.version} -B${pkgs.stdenv.cc.libc}/lib $CFLAGS"
                   export CXXFLAGS="-B${gccForLibs}/lib/gcc/${pkgs.stdenv.targetPlatform.config}/${gccForLibs.version} -B${pkgs.stdenv.cc.libc}/lib $CXXFLAGS"
-                  if [ ! -d ${venvPath} ]; then
+                  [ ! -d ${venvPath} ]; FIRST_RUN=$?
+                  if [ $FIRST_RUN = 0 ]; then
                     printf "[shell_hook] Creating ${venvPath}\n"
-                    uv venv ${venvPath}
+                    virtualenv ${venvPath}
                   fi
                   printf "[shell_hook] Activating ${venvPath}\n"
                   source ${venvPath}/bin/activate
+                  if [ $FIRST_RUN = 0 ]; then
+                    llvmdev-update-python
+                  fi
                   printf "[shell_hook] Helper commands available:\n"
                   compgen -c llvmdev- | sed 's/^/\t/'
                 '';
