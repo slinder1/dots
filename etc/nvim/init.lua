@@ -134,11 +134,17 @@ vim.keymap.set({ 't' }, '<C-S-v>', '<C-\\><C-n>"+pi')
 vim.keymap.set({ 'n' }, '<C-S-c>', '"+yy')
 vim.keymap.set({ 'v' }, '<C-S-c>', '"+y')
 
-local windowkeys = { 'h', 'j', 'k', 'l', 'v', 's', 'H', 'J', 'K', 'L' }
+local windowkeys = vim.split('hjklHJKLTvstbrR=-+<>', '')
 for _, key in ipairs(windowkeys) do
   vim.keymap.set('n', '<space>w' .. key, '<C-w>' .. key)
+  -- "unmap" the ctrl version as a learning aide
+  --vim.keymap.set('n', '<C-w>' .. key, '<Nop>')
 end
 vim.keymap.set('n', '<space>wd', '<C-w>c')
+
+-- workaround to force sync contents of windows after reattaching
+-- likely due to https://github.com/neovide/neovide/issues/3013 ?
+vim.keymap.set('n', '<space>we', '<C-w>v<C-w>c')
 
 vim.keymap.set('n', '<space>wp', ':b#<cr>')
 vim.keymap.set({ 'n', 't', 'i' }, '<M-p>', function()
