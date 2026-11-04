@@ -90,7 +90,7 @@ vim.g.termfeatures = termfeatures
 -- })
 
 
-vim.g.neovide_fullscreen = true
+vim.g.neovide_fullscreen = false
 vim.keymap.set("n", "<M-CR>", function() vim.g.neovide_fullscreen = not vim.g.neovide_fullscreen end)
 vim.o.winborder = 'rounded'
 vim.g.neovide_floating_corner_radius = 0.1
