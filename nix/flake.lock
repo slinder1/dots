@@ -8,11 +8,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1781539847,
-        "narHash": "sha256-aLuEbEtzEcZzCpnsXgGjvygWm4RK4zw/TlS+KgwPR/4=",
+        "lastModified": 1792002654,
+        "narHash": "sha256-54R5oe6+A1FZPFZeoP0feowtB0xscupf6WwffW/nnuM=",
         "owner": "ROCm",
         "repo": "cm",
-        "rev": "499f5b19308ad5c474e35c1c7534bf1d2f790f5f",
+        "rev": "881dce5e41c695cd84e575812c4e578501ff8a86",
         "type": "github"
       },
       "original": {
@@ -260,11 +260,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1789873389,
-        "narHash": "sha256-o2r3aSW1X24TkfbgEP5/2UT+/m5pj7ZuUU4hPBwiCqk=",
+        "lastModified": 1789874725,
+        "narHash": "sha256-xnYdMtNFgdbsaGGFlVzVnB1Kt6Mk0NWwHSxUN7JSwwM=",
         "owner": "slinder1",
         "repo": "praddle",
-        "rev": "069381d5cb567c142c3d62b28bf41e558d733c33",
+        "rev": "8683dc360ddcaa5fbf44b5fa91c4679f89d36063",
         "type": "github"
       },
       "original": {

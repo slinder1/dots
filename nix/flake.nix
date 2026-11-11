@@ -93,6 +93,7 @@
               tree-sitter
               xxd
               (python pkgs)
+              uv
             ];
           };
         core-src =
