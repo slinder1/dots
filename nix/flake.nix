@@ -206,15 +206,14 @@
                   pkgs.writeShellScriptBin wrapper ''
                     [ -n "${wrapped}" ] && [ -n "''${LLVM_BWRAPPED:-}" ] && exec ${wrapped} "$@"
                     exec ${pkgs.bubblewrap}/bin/bwrap \
+                      --ro-bind /nix/store /nix/store \
+                      --ro-bind "$HOME" "$HOME" \
                       --bind "$LLVM_PROJECT_ROOT" "$LLVM_PROJECT_ROOT" \
                       --bind "$CCACHE_DIR" "$CCACHE_DIR" \
-                      --ro-bind /nix/store /nix/store \
                       --bind /tmp /tmp \
                       --dev /dev \
                       --proc /proc \
                       --unshare-net \
-                      --tmpfs /home/user \
-                      --setenv HOME  /home/user \
                       --setenv LLVM_BWRAPPED 1 \
                       --chdir "$PWD" \
                       ${wrapped} "$@"
@@ -223,6 +222,7 @@
                   name = "bwrapped-build-tools";
                   paths = [
                     (bwrapBuildTool "llvmdev-bwrap" "")
+                    (bwrapBuildTool "cm" "${cm.packages.${system}.default}/bin/cm")
                     (bwrapBuildTool "cmake" "${pkgs.cmake}/bin/cmake")
                     (bwrapBuildTool "ninja" "${pkgs.ninja}/bin/ninja")
                   ];
@@ -238,6 +238,7 @@
                   llvmPackages.bintools
                   mold
                   ninja
+                  perl
                   (python pkgs)
                   (pkgs.writeShellApplication {
                     name = "llvmdev-update-python";

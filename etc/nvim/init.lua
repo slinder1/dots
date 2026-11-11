@@ -131,8 +131,9 @@ vim.keymap.set({ 'i', 't', 'c' }, '<C-j>', '<C-\\><C-n>')
 vim.keymap.set({ 'n' }, '<C-S-v>', '"+p')
 vim.keymap.set({ 'i', 'c' }, '<C-S-v>', '<C-r>+')
 vim.keymap.set({ 't' }, '<C-S-v>', '<C-\\><C-n>"+pi')
-vim.keymap.set({ 'n' }, '<C-S-c>', '"+yy')
-vim.keymap.set({ 'v' }, '<C-S-c>', '"+y')
+vim.keymap.set({ 'n' }, 'YY', '"+yy')
+vim.keymap.set({ 'n' }, 'Y', '"+y')
+vim.keymap.set({ 'v' }, 'Y', '"+y')
 
 local windowkeys = vim.split('hjklHJKLTvstbrR=-+<>', '')
 for _, key in ipairs(windowkeys) do
@@ -466,6 +467,13 @@ local spec = {
     },
   },
   'barrettruth/diffs.nvim',
+  {
+    'nvim-treesitter/nvim-treesitter',
+    lazy = false,
+    config = function()
+      require('nvim-treesitter').install({ 'llvm' })
+    end,
+  },
   {
     'nvim-treesitter/nvim-treesitter-context',
     dependencies = { 'nvim-treesitter/nvim-treesitter' },
