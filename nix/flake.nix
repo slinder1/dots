@@ -240,6 +240,7 @@
                   mold
                   ninja
                   perl
+                  zlib
                   (python pkgs)
                   (pkgs.writeShellApplication {
                     name = "llvmdev-update-python";

@@ -1,13 +1,7 @@
 #!/bin/bash
 
-printf "You're running the correct, bubblewrapped opencode!\n"
-printf "If you ever fail to see this message you are running opencode WITHOUT A SANDBOX.\n\n"
-read -p "Are you OK with everything under $PWD being read-write in the sandbox? [y/N] " yn
-
-[[ $yn =~ ^[yY]$ ]] || exit 1
-
 REALBIN="$HOME/.opencode/bin/opencode"
-RW_BINDS=("$HOME/.config/opencode" "$HOME/.local/share/opencode" "$HOME/.local/state/opencode" "$HOME/.cache/opencode" "$HOME/.cargo" /nix)
+RW_BINDS=("$HOME/.config/opencode" "$HOME/.local/share/opencode" "$HOME/.local/state/opencode" "$HOME/.cache" "$HOME/.cargo" /nix)
 # use tmpfs binds to hide some paths/mounts:
 # * we don't need any interop with anything keeping pid files or sockets in /run
 # * /mnt/c would provide an escape mechanism for accessing the host, including
