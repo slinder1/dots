@@ -260,11 +260,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1789874725,
-        "narHash": "sha256-xnYdMtNFgdbsaGGFlVzVnB1Kt6Mk0NWwHSxUN7JSwwM=",
+        "lastModified": 1795015626,
+        "narHash": "sha256-UjKU18TvHO6JN24rA2DhqBvcbGDB3WcuZ3EIuhoXfQA=",
         "owner": "slinder1",
         "repo": "praddle",
-        "rev": "8683dc360ddcaa5fbf44b5fa91c4679f89d36063",
+        "rev": "2a5615ed1de81a6d2eef3d6692386439d1c063ad",
         "type": "github"
       },
       "original": {
